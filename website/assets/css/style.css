@@ -844,7 +844,8 @@ p {
     color: #222;
 }
 
-.contact-item a {
+.contact-item a,
+.contact-item span {
     color: #4CAF50;
 }
 
