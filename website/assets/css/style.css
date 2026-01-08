@@ -273,6 +273,10 @@ p {
     display: grid;
     grid-template-columns: 1fr;
     gap: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
 }
 
 .about-image {
@@ -383,6 +387,7 @@ p {
     aspect-ratio: 1;
     overflow: hidden;
     border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .grid-item img {
@@ -444,6 +449,7 @@ p {
     padding: 40px 20px;
     background: #fff;
     border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     transition: all 0.3s ease;
 }
 
@@ -470,10 +476,10 @@ p {
 }
 
 /* ==========================================
-   PRODUCTS HIGHLIGHT (Red Section)
+   PRODUCTS HIGHLIGHT (Pink Section)
    ========================================== */
 .products-highlight {
-    background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+    background: linear-gradient(135deg, #FF69B4 0%, #FFB6C1 100%);
     color: #fff;
 }
 
@@ -663,6 +669,10 @@ p {
 .mission-content {
     max-width: 900px;
     margin: 0 auto;
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .mission-text p {
@@ -722,6 +732,13 @@ p {
    ========================================== */
 .contact-section {
     background: #fff;
+}
+
+.contact-info {
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .contact-info h2 {

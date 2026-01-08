@@ -42,7 +42,10 @@ function initCounters() {
                 });
             }
         });
-    }, { threshold: 0.5 });
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
+    });
 
     // Observe the hero section
     const heroSection = document.querySelector('.hero');
