@@ -364,6 +364,137 @@ p {
 }
 
 /* ==========================================
+   MEET THE FOUNDER SECTION
+   ========================================== */
+.founder-section {
+    background: #f9f9f9;
+    padding: 100px 0;
+}
+
+.founder-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 80px;
+    align-items: start;
+}
+
+.founder-image {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.founder-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.founder-badge {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: linear-gradient(135deg, #4CAF50 0%, #B8F542 100%);
+    padding: 12px 24px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.founder-badge span {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.founder-content {
+    padding: 20px 0;
+}
+
+.section-label {
+    color: #4CAF50;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+}
+
+.founder-content h2 {
+    font-size: 3rem;
+    color: #222;
+    margin-bottom: 10px;
+}
+
+.founder-content h3 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.founder-bio p {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+    color: #444;
+    margin-bottom: 20px;
+}
+
+.founder-bio strong {
+    color: #4CAF50;
+    font-weight: 700;
+}
+
+.founder-highlights {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 50px;
+}
+
+.highlight-item {
+    text-align: center;
+    padding: 30px 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.highlight-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.highlight-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.highlight-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.highlight-item h4 {
+    font-size: 1.125rem;
+    color: #222;
+    margin-bottom: 8px;
+}
+
+.highlight-item p {
+    font-size: 0.9375rem;
+    color: #666;
+    margin: 0;
+}
+
+/* ==========================================
    IMPACT SECTION
    ========================================== */
 .impact-section {
@@ -1167,12 +1298,22 @@ p {
         gap: 20px;
     }
 
-    .about-grid {
+    .about-grid,
+    .founder-grid {
         grid-template-columns: 1fr;
         gap: 40px;
     }
 
     .about-content {
+        gap: 20px;
+    }
+
+    .founder-content h2 {
+        font-size: 2rem;
+    }
+
+    .founder-highlights {
+        grid-template-columns: 1fr;
         gap: 20px;
     }
 
