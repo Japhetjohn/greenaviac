@@ -170,6 +170,12 @@ document.querySelectorAll('.about-features .feature-box').forEach((box, index) =
     scrollObserver.observe(box);
 });
 
+// Add staggered animation to impact stat cards
+document.querySelectorAll('.impact-stat-card').forEach((card, index) => {
+    card.style.animationDelay = `${index * 0.1}s`;
+    scrollObserver.observe(card);
+});
+
 // ==========================================
 // IMPACT CAROUSEL - Auto-sliding with manual controls
 // ==========================================
