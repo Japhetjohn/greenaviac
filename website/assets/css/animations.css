@@ -113,24 +113,26 @@
 
 .scroll-left {
     opacity: 0;
-    transform: translateX(-50px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateX(-80px) scale(0.95);
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .scroll-left.revealed {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
 }
 
 .scroll-right {
     opacity: 0;
-    transform: translateX(50px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateX(80px) scale(0.95);
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .scroll-right.revealed {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
 }
 
 /* ==========================================
@@ -191,6 +193,32 @@
     height: 8px;
     background: rgba(184, 245, 66, 0.3);
     z-index: -1;
+}
+
+/* ==========================================
+   REDUCE MOTION (Accessibility)
+   ========================================== */
+
+/* ==========================================
+   FEATURE BOX ENTRANCE ANIMATION
+   ========================================== */
+
+@keyframes featureBoxEntrance {
+    0% {
+        opacity: 0;
+        transform: translateX(80px) scale(0.9);
+    }
+    60% {
+        transform: translateX(-5px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.about-features .feature-box.revealed {
+    animation: featureBoxEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* ==========================================

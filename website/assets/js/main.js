@@ -164,6 +164,12 @@ document.querySelectorAll('.grid-item').forEach((item, index) => {
     scrollObserver.observe(item);
 });
 
+// Add staggered animation delays and scroll observation to feature boxes in About section
+document.querySelectorAll('.about-features .feature-box').forEach((box, index) => {
+    box.style.animationDelay = `${index * 0.15}s`;
+    scrollObserver.observe(box);
+});
+
 // ==========================================
 // IMPACT CAROUSEL - Auto-sliding with manual controls
 // ==========================================

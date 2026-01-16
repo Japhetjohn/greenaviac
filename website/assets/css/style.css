@@ -263,60 +263,131 @@ p {
 
 .about-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1.2fr 1fr;
     gap: 60px;
     margin-top: 60px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .about-content {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 30px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    gap: 40px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
     background: #fff;
-    padding: 30px;
-    border-radius: 8px;
+    padding: 50px;
+    border-radius: 12px;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
 }
 
 .about-image {
     width: 100%;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    transform: translateZ(0);
+    transition: transform 0.5s ease;
 }
 
 .about-image img {
     width: 100%;
     height: auto;
     display: block;
+    transition: transform 0.5s ease;
+}
+
+.about-image:hover img {
+    transform: scale(1.05);
 }
 
 .about-text p {
-    margin-bottom: 20px;
-    line-height: 1.8;
-    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.9;
+    color: #555;
+    font-size: 1.0625rem;
 }
 
 .about-features {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
+    height: 100%;
+    justify-content: space-between;
 }
 
 .feature-box {
     background: #fff;
-    padding: 30px;
-    border-radius: 8px;
+    padding: 45px 30px;
+    border-radius: 12px;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-    border-left: 4px solid #4CAF50;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 5px solid #4CAF50;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+}
+
+.feature-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(184, 245, 66, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
 }
 
 .feature-box:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    transform: translateX(10px) translateY(-5px);
+    box-shadow: 0 12px 40px rgba(76, 175, 80, 0.2);
+    border-left-width: 8px;
+}
+
+.feature-box:hover::before {
+    opacity: 1;
+}
+
+.feature-icon-box {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4CAF50;
+    transition: transform 0.4s ease, color 0.4s ease;
+}
+
+.feature-box:hover .feature-icon-box {
+    transform: scale(1.15) rotate(5deg);
+    color: #45a049;
+}
+
+.feature-icon-box svg {
+    width: 100%;
+    height: 100%;
+}
+
+.feature-box h4 {
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    color: #222;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+}
+
+.feature-box p {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #666;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    line-height: 1.6;
 }
 
 .feature-icon {
@@ -337,13 +408,6 @@ p {
     font-size: 2.5rem;
     color: #4CAF50;
     margin-bottom: 10px;
-}
-
-.feature-box p {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: #666;
-    margin: 0;
 }
 
 .about-mission {
@@ -1297,10 +1361,21 @@ p {
     .about-grid {
         grid-template-columns: 1fr;
         gap: 40px;
+        align-items: center;
     }
 
     .about-content {
+        gap: 30px;
+        padding: 35px;
+    }
+
+    .about-features {
+        justify-content: flex-start;
         gap: 20px;
+    }
+
+    .feature-box {
+        padding: 30px 20px;
     }
 
     .founder-grid {
@@ -1407,9 +1482,31 @@ p {
 
     .products-content,
     .mission-content,
-    .about-content,
     .contact-info {
         padding: 20px;
+    }
+
+    .about-content {
+        padding: 25px;
+        gap: 25px;
+    }
+
+    .feature-box {
+        padding: 25px 18px;
+    }
+
+    .feature-icon-box {
+        width: 55px;
+        height: 55px;
+        margin: 0 auto 15px;
+    }
+
+    .feature-box h4 {
+        font-size: 1.125rem;
+    }
+
+    .feature-box p {
+        font-size: 0.9375rem;
     }
 
     .section-title,
