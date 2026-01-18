@@ -6,10 +6,19 @@
     <meta name="description" content="Green AVIC - Empowering women with eco-conscious, plant-based menstrual solutions. Fearless sanitary products for sustainable feminine hygiene.">
     <title>Green AVIC | Empowering Women Sustainably</title>
 
+    <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="assets/css/style.css" as="style">
+    <link rel="preload" href="assets/images/gallery/fearless-showcase.jpg" as="image">
+    <link rel="preload" href="assets/images/brand/greenavic-logo.png" as="image">
+
+    <!-- Fonts with display swap for faster rendering -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/animations.css">
     <link rel="icon" type="image/png" href="assets/images/brand/favicon.png">
@@ -76,7 +85,7 @@
                     <a href="#about" class="btn btn-secondary">LEARN MORE</a>
                 </div>
                 <div class="hero-image">
-                    <img src="assets/images/gallery/fearless-showcase.jpg" alt="Fearless - Empowering Women">
+                    <img src="assets/images/gallery/fearless-showcase.jpg" alt="Fearless - Empowering Women" loading="eager">
                 </div>
             </div>
         </div>
@@ -201,7 +210,7 @@
             </div>
             <div class="mission-grid">
                 <div class="mission-image scroll-left">
-                    <img src="assets/images/gallery/gallery-3.jpg" alt="Our Mission">
+                    <img src="assets/images/gallery/gallery-3.jpg" alt="Our Mission" loading="lazy">
                 </div>
                 <div class="mission-content scroll-right">
                     <div class="mission-text">
@@ -258,7 +267,7 @@
             <div class="about-grid">
                 <div class="about-content scroll-left">
                     <div class="about-image">
-                        <img src="assets/images/gallery/gallery-1.jpg" alt="Women Empowerment">
+                        <img src="assets/images/gallery/gallery-1.jpg" alt="Women Empowerment" loading="lazy">
                     </div>
                     <div class="about-text">
                         <p>
@@ -318,7 +327,7 @@
         <div class="container">
             <div class="products-grid">
                 <div class="products-image scroll-left">
-                    <img src="assets/images/gallery/gallery-2.jpg" alt="Fearless Products">
+                    <img src="assets/images/gallery/gallery-2.jpg" alt="Fearless Products" loading="lazy">
                 </div>
                 <div class="products-content scroll-right">
                     <h2>Meet <span>FEARLESS</span></h2>
@@ -352,7 +361,7 @@
             <div class="cards-grid">
                 <div class="product-card">
                     <div class="card-image">
-                        <img src="assets/images/products/fearless-teal.png" alt="Fearless Ultra Thin">
+                        <img src="assets/images/products/fearless-teal.png" alt="Fearless Ultra Thin" loading="lazy">
                         <span class="badge">BESTSELLER</span>
                     </div>
                     <div class="card-content">
@@ -368,7 +377,7 @@
 
                 <div class="product-card">
                     <div class="card-image">
-                        <img src="assets/images/products/fearless-pink.png" alt="Fearless Overnight">
+                        <img src="assets/images/products/fearless-pink.png" alt="Fearless Overnight" loading="lazy">
                         <span class="badge new">NEW</span>
                     </div>
                     <div class="card-content">
@@ -384,7 +393,7 @@
 
                 <div class="product-card">
                     <div class="card-image">
-                        <img src="assets/images/products/fearless-teal.png" alt="Fearless Panty liners">
+                        <img src="assets/images/products/fearless-teal.png" alt="Fearless Panty liners" loading="lazy">
                     </div>
                     <div class="card-content">
                         <h3>FEARLESS Panty Liners</h3>
@@ -427,7 +436,7 @@
                     <div class="carousel-track">
                         <div class="carousel-slide">
                             <div class="carousel-card">
-                                <img src="assets/images/impact/community-cleanup-1.jpg" alt="Community Plastic Cleanup 2022">
+                                <img src="assets/images/impact/community-cleanup-1.jpg" alt="Community Plastic Cleanup 2022" loading="lazy">
                                 <div class="carousel-caption">
                                     <h4>Community Cleanup Initiative</h4>
                                     <p>Ms. Vera leading plastic waste collection drive</p>
@@ -436,7 +445,7 @@
                         </div>
                         <div class="carousel-slide">
                             <div class="carousel-card">
-                                <img src="assets/images/impact/community-cleanup-2.jpg" alt="Team Community Service">
+                                <img src="assets/images/impact/community-cleanup-2.jpg" alt="Team Community Service" loading="lazy">
                                 <div class="carousel-caption">
                                     <h4>Environmental Awareness</h4>
                                     <p>Educating communities on sustainable practices</p>
@@ -445,7 +454,7 @@
                         </div>
                         <div class="carousel-slide">
                             <div class="carousel-card">
-                                <img src="assets/images/impact/community-cleanup-3.jpg" alt="Youth Education on SDGs">
+                                <img src="assets/images/impact/community-cleanup-3.jpg" alt="Youth Education on SDGs" loading="lazy">
                                 <div class="carousel-caption">
                                     <h4>UN SDGs Sensitization</h4>
                                     <p>Teaching young people about sustainability</p>
@@ -454,7 +463,7 @@
                         </div>
                         <div class="carousel-slide">
                             <div class="carousel-card">
-                                <img src="assets/images/impact/community-cleanup-4.jpg" alt="Community Engagement">
+                                <img src="assets/images/impact/community-cleanup-4.jpg" alt="Community Engagement" loading="lazy">
                                 <div class="carousel-caption">
                                     <h4>Community Engagement</h4>
                                     <p>Working together for a cleaner environment</p>
@@ -463,7 +472,7 @@
                         </div>
                         <div class="carousel-slide">
                             <div class="carousel-card certificate-card">
-                                <img src="assets/images/impact/un-certificate.jpg" alt="UN Certificate of Excellence">
+                                <img src="assets/images/impact/un-certificate.jpg" alt="UN Certificate of Excellence" loading="lazy">
                                 <div class="carousel-caption">
                                     <h4>Certificate of Excellence</h4>
                                     <p>UN Sustainable Development Solutions Network</p>
@@ -504,7 +513,7 @@
 
             <div class="founder-grid">
                 <div class="founder-image-container scroll-left">
-                    <img src="assets/images/founder-vera-chidera.jpg" alt="Ms. Vera Chidera - Founder of Green AVIC" style="max-width: 450px; width: 100%; height: auto;">
+                    <img src="assets/images/founder-vera-chidera.jpg" alt="Ms. Vera Chidera - Founder of Green AVIC" style="max-width: 450px; width: 100%; height: auto;" loading="lazy">
                     <div class="founder-badge">
                         <span>Founder & CEO</span>
                     </div>
@@ -653,6 +662,7 @@
         </div>
     </footer>
 
-    <script src="assets/js/main.js"></script>
+    <!-- JavaScript with defer for better performance -->
+    <script src="assets/js/main.js" defer></script>
 </body>
 </html>
