@@ -165,6 +165,27 @@ p {
     color: #4CAF50;
 }
 
+.nav-cta {
+    margin-left: 20px;
+}
+
+.btn-shop-nav {
+    background: #4CAF50;
+    color: #fff !important;
+    padding: 10px 24px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-shop-nav:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
 .nav-toggle {
     display: none;
     flex-direction: column;
@@ -1454,6 +1475,18 @@ p {
 
     .nav-list.active {
         left: 0;
+    }
+
+    .nav-cta {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    .btn-shop-nav {
+        display: block;
+        text-align: center;
+        padding: 14px 28px;
+        font-size: 0.9375rem;
     }
 
     .nav-toggle {
