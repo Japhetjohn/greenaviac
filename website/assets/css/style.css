@@ -1141,6 +1141,20 @@ p {
     transform: scale(1.05);
 }
 
+.mission-image.certificate-display {
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+}
+
+.mission-image.certificate-display img {
+    object-fit: contain;
+}
+
+.mission-image.certificate-display:hover img {
+    transform: scale(1.02);
+}
+
 .mission-content {
     background: transparent;
     padding: 40px 20px;
@@ -1213,15 +1227,16 @@ p {
 }
 
 /* ==========================================
-   PAST IMPACT CAROUSEL SECTION
+   WHERE IT ALL BEGAN - STORY PREVIEW
    ========================================== */
-.impact-carousel-section {
+.story-preview-section {
     background: #fff;
-    overflow: hidden;
+    padding: 100px 0;
     position: relative;
+    overflow: hidden;
 }
 
-.impact-carousel-section::before {
+.story-preview-section::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1234,6 +1249,75 @@ p {
     pointer-events: none;
     z-index: 0;
     filter: blur(2px);
+}
+
+.story-preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    margin-top: 60px;
+}
+
+.story-preview-image {
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+.story-preview-image:hover {
+    transform: scale(1.02);
+}
+
+.story-preview-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.5s ease;
+    border-radius: 0;
+    box-shadow: none;
+    object-fit: contain;
+    max-width: 100%;
+}
+
+.story-preview-image:hover img {
+    transform: scale(1.03);
+}
+
+.story-preview-content {
+    padding: 20px;
+    position: relative;
+}
+
+.story-preview-content::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 400px;
+    height: 400px;
+    background: url('../images/graphics/plants-flat.jpg') no-repeat center;
+    background-size: contain;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: -1;
+    transform: rotate(15deg);
+    filter: blur(1px);
+}
+
+.story-preview-text {
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.story-preview-content .btn {
+    margin-top: 20px;
 }
 
 .section-header {
@@ -1276,10 +1360,12 @@ p {
     z-index: 1;
 }
 
+
 .carousel-wrapper {
     overflow: hidden;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    min-height: 500px;
 }
 
 .carousel-track {
@@ -1297,7 +1383,12 @@ p {
     background: #f9f9f9;
     border-radius: 12px;
     overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
 
 .carousel-card img {
     width: 100%;
@@ -1306,10 +1397,45 @@ p {
     display: block;
 }
 
-.certificate-card img {
+
+.certificate-display {
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.certificate-display img {
+    border-radius: 0;
+    box-shadow: none;
+    transition: transform 0.3s ease;
+    width: 100%;
+    height: auto;
     object-fit: contain;
-    background: #fff;
-    padding: 20px;
+    max-width: 100%;
+}
+
+.certificate-display:hover img {
+    transform: scale(1.02);
+}
+
+.certificate-content-section {
+    position: relative;
+}
+
+.certificate-content-section::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 400px;
+    height: 400px;
+    background: url('../images/graphics/ecology-hands.jpg') no-repeat center;
+    background-size: contain;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: -1;
+    transform: rotate(-15deg);
+    filter: blur(1px);
 }
 
 .carousel-caption {
@@ -1701,6 +1827,23 @@ p {
     .founder-highlights {
         grid-template-columns: 1fr;
         gap: 25px;
+    }
+
+    .story-preview-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        margin-top: 40px;
+    }
+
+    .story-preview-content {
+        padding: 0;
+    }
+
+    .certificate-display img,
+    .story-preview-image img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
     }
 
     .about-image {
