@@ -1099,10 +1099,10 @@ p {
     height: 550px;
     background: url('../images/graphics/plants-flat.jpg') no-repeat center;
     background-size: cover;
-    opacity: 0.06;
+    opacity: 0.18;
     pointer-events: none;
     z-index: 0;
-    filter: blur(2px);
+    filter: blur(1px);
 }
 
 .mission-header {
@@ -1116,12 +1116,13 @@ p {
 }
 
 .mission-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
+    display: flex;
+    justify-content: center;
     align-items: center;
     position: relative;
     z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 .mission-image {
@@ -1161,24 +1162,27 @@ p {
     border-radius: 0;
     box-shadow: none;
     border: none;
+    max-width: 900px;
+    text-align: center;
 }
 
 .mission-text p {
-    font-size: 1.125rem;
-    line-height: 1.8;
+    font-size: 1.25rem;
+    line-height: 1.9;
     margin-bottom: 20px;
+    color: #333;
 }
 
 .mission-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 30px;
     margin-top: 40px;
     position: relative;
     z-index: 1;
 }
 
-.mission-stat-item {
+.mission-stat {
     text-align: center;
     padding: 15px;
     background: transparent;
@@ -1187,40 +1191,42 @@ p {
     box-shadow: none;
 }
 
-.mission-stat-item:hover {
+.mission-stat:hover {
     transform: translateY(-2px);
     background: transparent;
     box-shadow: none;
 }
 
-.mission-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 10px;
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 15px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #4CAF50;
 }
 
-.mission-icon svg {
+.stat-icon svg {
     width: 100%;
     height: 100%;
 }
 
-.mission-icon img {
+.stat-icon img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     filter: brightness(0) saturate(100%) invert(56%) sepia(93%) saturate(451%) hue-rotate(76deg) brightness(96%) contrast(89%);
 }
 
-.mission-stat-item h4 {
+.mission-stat h4 {
     font-size: 1rem;
     margin-bottom: 5px;
     color: #333333;
+    font-weight: 700;
 }
 
-.mission-stat-item p {
+.mission-stat p {
     font-size: 0.875rem;
     color: #666;
     margin: 0;
@@ -1910,8 +1916,7 @@ p {
     }
 
     .mission-grid {
-        grid-template-columns: 1fr;
-        gap: 40px;
+        padding: 0 20px;
     }
 
     .mission-stats {
