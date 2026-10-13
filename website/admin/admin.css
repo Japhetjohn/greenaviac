@@ -893,25 +893,164 @@ textarea.form-control {
     background: #C62828;
 }
 
-/* Responsive adjustments */
+/* ========================================================
+   RESPONSIVE DESIGN (MOBILE & TABLET POLISH)
+   ======================================================== */
 @media (max-width: 768px) {
-    .nav-container {
-        padding: 10px 16px;
+    /* Header & Navigation */
+    .admin-nav {
+        border-bottom: 1px solid var(--border-color);
     }
 
-    .brand-title span:last-child {
+    .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px 16px;
+    }
+
+    .brand-group {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .nav-logo {
+        height: 30px;
+    }
+
+    .brand-title {
+        font-size: 1.05rem;
+    }
+
+    .brand-badge {
         display: none;
     }
 
-    .admin-main {
-        padding: 0 16px 40px;
-        margin: 20px auto;
+    .nav-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
     }
 
+    .user-badge {
+        display: none; /* Hide long email string on small mobile screens */
+    }
+
+    .nav-link-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .btn-logout {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    /* Main Container */
+    .admin-main {
+        padding: 0 14px 40px;
+        margin: 16px auto;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .header-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+
+    .header-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Form Fields & Touch Friendly Inputs */
     .form-grid-2 {
         grid-template-columns: 1fr;
+        gap: 14px;
     }
 
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-control,
+    .editor-textarea,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        font-size: 16px !important; /* Prevents iOS Safari auto-zoom on focus */
+        padding: 12px;
+    }
+
+    /* Rich Editor Toolbar */
+    .editor-toolbar {
+        padding: 6px;
+        gap: 4px;
+    }
+
+    .toolbar-btn {
+        padding: 6px 9px;
+        font-size: 0.8rem;
+        min-width: 34px;
+    }
+
+    .editor-textarea {
+        min-height: 220px;
+        padding: 12px;
+    }
+
+    /* Cover Upload Dropzone */
+    .upload-dropzone {
+        padding: 20px 14px;
+    }
+
+    /* Editor Footer Bar */
+    .editor-footer-bar {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 10px;
+        padding: 16px 14px;
+    }
+
+    .editor-footer-left,
+    .editor-footer-right {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+
+    .editor-footer-right .btn,
+    .editor-footer-left .btn {
+        flex: 1;
+        justify-content: center;
+        padding: 13px 14px;
+        font-size: 0.875rem;
+        text-align: center;
+    }
+
+    /* Publication Overview Card */
     .publication-preview-layout {
         grid-template-columns: 1fr;
     }
@@ -925,23 +1064,78 @@ textarea.form-control {
     }
 
     .preview-thumb {
-        height: 160px;
+        height: 180px;
     }
 
-    .editor-footer-bar {
+    /* Modals on Mobile */
+    .modal-overlay {
+        padding: 12px;
+        align-items: center;
+    }
+
+    .modal-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92vh;
+        overflow-y: auto;
+        border-radius: 16px;
+    }
+
+    .modal-header {
+        padding: 16px 18px;
+    }
+
+    .modal-title {
+        font-size: 1.15rem;
+    }
+
+    .modal-body {
+        padding: 16px 18px;
+    }
+
+    .modal-footer {
+        padding: 14px 18px;
         flex-direction: column-reverse;
-        align-items: stretch;
+        gap: 8px;
     }
 
-    .editor-footer-left,
-    .editor-footer-right {
+    .modal-footer .btn {
         width: 100%;
-        justify-content: stretch;
+        justify-content: center;
     }
 
-    .editor-footer-right .btn,
-    .editor-footer-left .btn {
-        flex: 1;
-        text-align: center;
+    /* Team & Admins Modal specifics */
+    #adminsModal .modal-body {
+        padding: 16px;
+    }
+
+    #adminsModal .modal-body > div > div {
+        flex-direction: column;
+    }
+
+    #inviteLinkInput {
+        width: 100%;
+    }
+
+    #btnGenerateInvite, #btnCopyInviteLink {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-title span:first-child {
+        font-size: 0.95rem;
+    }
+
+    .nav-actions {
+        gap: 6px;
+    }
+
+    .nav-link-btn span {
+        font-size: 0.75rem;
+    }
+
+    .btn-logout span {
+        font-size: 0.75rem;
     }
 }
