@@ -15,6 +15,8 @@
 html {
     scroll-behavior: smooth;
     font-size: 16px;
+    overflow-x: hidden;
+    width: 100%;
 }
 
 body {
@@ -23,6 +25,9 @@ body {
     line-height: 1.6;
     color: #333333;
     background: #fff;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
 }
 
 img {
@@ -226,6 +231,8 @@ p {
     pointer-events: none;
     z-index: 0;
     filter: blur(1px);
+    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 75%);
+    mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 75%);
 }
 
 .hero-grid {
@@ -300,10 +307,26 @@ p {
     text-transform: uppercase;
 }
 
+.hero-image {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    background: #fff;
+    padding: 8px;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hero-image:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -15px rgba(0,0,0,0.16);
+}
+
 .hero-image img {
     width: 100%;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-radius: 18px;
+    display: block;
+    object-fit: cover;
 }
 
 /* ==========================================
@@ -326,10 +349,12 @@ p {
     height: 450px;
     background: url('../images/graphics/ecology-hands.jpg') no-repeat center;
     background-size: cover;
-    opacity: 0.28;
+    opacity: 0.25;
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
+    -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 70%);
+    mask-image: radial-gradient(circle, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 70%);
 }
 
 .about-grid {
@@ -358,22 +383,30 @@ p {
 
 .about-image {
     width: 100%;
-    border-radius: 12px;
+    border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    background: #fff;
+    padding: 8px;
     transform: translateZ(0);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.about-image:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -15px rgba(0,0,0,0.16);
 }
 
 .about-image img {
     width: 100%;
     height: auto;
+    border-radius: 18px;
     display: block;
     transition: transform 0.5s ease;
 }
 
 .about-image:hover img {
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 .about-text p {
@@ -508,9 +541,11 @@ p {
     height: 550px;
     background: url('../images/graphics/green-waves.jpg') no-repeat center;
     background-size: contain;
-    opacity: 0.30;
+    opacity: 0.25;
     pointer-events: none;
     z-index: 0;
+    -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+    mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
 }
 
 .founder-grid {
@@ -524,17 +559,30 @@ p {
 
 .founder-image-container {
     position: relative;
-    border-radius: 12px;
+    border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    height: 600px;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    background: #fff;
+    padding: 8px;
+    max-width: 480px;
+    height: auto;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.founder-image-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -15px rgba(0,0,0,0.16);
 }
 
 .founder-image-container img {
     width: 100%;
-    height: 100%;
+    height: auto;
+    max-height: 580px;
     object-fit: cover;
-    object-position: center;
+    object-position: center top;
+    border-radius: 18px;
+    display: block;
+}
     display: block;
 }
 
@@ -692,8 +740,9 @@ p {
 .grid-item {
     aspect-ratio: 1;
     overflow: hidden;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border-radius: 20px;
+    box-shadow: 0 12px 30px -10px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.04);
 }
 
 .grid-item img {
@@ -830,9 +879,11 @@ p {
     height: 500px;
     background: url('../images/graphics/green-waves.jpg') no-repeat center;
     background-size: contain;
-    opacity: 0.32;
+    opacity: 0.25;
     pointer-events: none;
     z-index: 0;
+    -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+    mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
 }
 
 .features-grid {
@@ -919,9 +970,25 @@ p {
     z-index: 1;
 }
 
+.products-image {
+    border-radius: 24px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 20px 40px -10px rgba(180, 50, 100, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.4);
+    transition: transform 0.3s ease;
+}
+
+.products-image:hover {
+    transform: translateY(-4px);
+}
+
 .products-image img {
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border-radius: 18px;
+    width: 100%;
+    display: block;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
 .products-content h2 {
@@ -992,33 +1059,42 @@ p {
 
 .product-card {
     background: #fff;
-    border-radius: 8px;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: none;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
     transition: all 0.3s ease;
-    border: 1px solid #f0f0f0;
+    border: 1px solid rgba(0,0,0,0.06);
 }
 
 .product-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    border-color: #e0e0e0;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.12);
+    border-color: rgba(76, 175, 80, 0.3);
 }
 
 .card-image {
     position: relative;
     height: 300px;
-    background: #f5f5f5;
+    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 24px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
 }
 
 .card-image img {
     max-height: 100%;
     width: auto;
     margin: 0 auto;
+    border-radius: 12px;
+    mix-blend-mode: multiply;
+    transition: transform 0.4s ease;
+}
+
+.product-card:hover .card-image img {
+    transform: scale(1.05);
 }
 
 .badge {
@@ -1099,10 +1175,12 @@ p {
     height: 550px;
     background: url('../images/graphics/plants-flat.jpg') no-repeat center;
     background-size: cover;
-    opacity: 0.18;
+    opacity: 0.15;
     pointer-events: none;
     z-index: 0;
     filter: blur(1px);
+    -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+    mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
 }
 
 .mission-header {
@@ -1126,30 +1204,42 @@ p {
 }
 
 .mission-image {
-    border-radius: 12px;
+    border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    background: #fff;
+    padding: 8px;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mission-image:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -15px rgba(0,0,0,0.16);
 }
 
 .mission-image img {
     width: 100%;
     height: auto;
+    border-radius: 18px;
     display: block;
     transition: transform 0.5s ease;
 }
 
 .mission-image:hover img {
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 .mission-image.certificate-display {
-    border-radius: 0;
-    overflow: visible;
-    box-shadow: none;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    background: #fff;
+    padding: 8px;
 }
 
 .mission-image.certificate-display img {
     object-fit: contain;
+    border-radius: 18px;
 }
 
 .mission-image.certificate-display:hover img {
@@ -1255,6 +1345,8 @@ p {
     pointer-events: none;
     z-index: 0;
     filter: blur(2px);
+    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 80%);
+    mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 80%);
 }
 
 .story-preview-grid {
@@ -1268,15 +1360,18 @@ p {
 }
 
 .story-preview-image {
-    border-radius: 0;
-    overflow: visible;
-    box-shadow: none;
-    transition: transform 0.3s ease;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    background: #fff;
+    padding: 8px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
 }
 
 .story-preview-image:hover {
-    transform: scale(1.02);
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -15px rgba(0,0,0,0.16);
 }
 
 .story-preview-image img {
@@ -1284,14 +1379,14 @@ p {
     height: auto;
     display: block;
     transition: transform 0.5s ease;
-    border-radius: 0;
+    border-radius: 18px;
     box-shadow: none;
     object-fit: contain;
     max-width: 100%;
 }
 
 .story-preview-image:hover img {
-    transform: scale(1.03);
+    transform: scale(1.02);
 }
 
 .story-preview-content {
@@ -1313,6 +1408,8 @@ p {
     z-index: -1;
     transform: rotate(15deg);
     filter: blur(1px);
+    -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+    mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
 }
 
 .story-preview-text {
@@ -1369,9 +1466,11 @@ p {
 
 .carousel-wrapper {
     overflow: hidden;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border-radius: 24px;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
     min-height: 500px;
+    background: #fff;
+    padding: 6px;
 }
 
 .carousel-track {
@@ -1387,7 +1486,7 @@ p {
 .carousel-card {
     position: relative;
     background: #f9f9f9;
-    border-radius: 12px;
+    border-radius: 20px;
     overflow: hidden;
     min-height: 500px;
     display: flex;
@@ -1395,29 +1494,37 @@ p {
     justify-content: center;
 }
 
-
 .carousel-card img {
     width: 100%;
     height: 500px;
     object-fit: cover;
     display: block;
+    border-radius: 20px;
 }
 
-
 .certificate-display {
-    border-radius: 0;
-    box-shadow: none;
-    overflow: visible;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    background: #fff;
+    padding: 8px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.certificate-display:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -15px rgba(0,0,0,0.16);
 }
 
 .certificate-display img {
-    border-radius: 0;
+    border-radius: 18px;
     box-shadow: none;
     transition: transform 0.3s ease;
     width: 100%;
     height: auto;
     object-fit: contain;
     max-width: 100%;
+    display: block;
 }
 
 .certificate-display:hover img {
@@ -1442,6 +1549,8 @@ p {
     z-index: -1;
     transform: rotate(-15deg);
     filter: blur(1px);
+    -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+    mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
 }
 
 .carousel-caption {

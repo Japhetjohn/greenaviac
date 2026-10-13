@@ -135,6 +135,18 @@
     transform: translateX(0) scale(1);
 }
 
+@media (max-width: 768px) {
+    .scroll-left,
+    .scroll-right {
+        transform: translateY(20px) scale(0.98);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .scroll-left.revealed,
+    .scroll-right.revealed {
+        transform: translateY(0) scale(1);
+    }
+}
+
 /* ==========================================
    HOVER ANIMATIONS
    ========================================== */

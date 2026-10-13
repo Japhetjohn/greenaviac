@@ -3,14 +3,26 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Force HTTPS
+    # Force HTTPS (Production)
     RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-    # Remove .html extension from URL
+    # Protect data directory and sensitive file extensions
+    RewriteRule ^data/ - [F,L]
+    <FilesMatch "(?i)\.(json|bak|tmp|lock|config)$">
+        Require all denied
+    </FilesMatch>
+
+    # API Clean URLs
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+
+    # Clean HTML URLs
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME}\.html -f
-    RewriteRule ^(.*)$ $1.html [L]
+    RewriteRule ^(.*)$ $1.html [L,QSA]
 
     # Redirect .html requests to clean URLs
     RewriteCond %{THE_REQUEST} ^GET\ /[^?\s]*\.html
@@ -22,6 +34,7 @@
     ExpiresByType image/jpeg "access plus 1 year"
     ExpiresByType image/jpg "access plus 1 year"
     ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
     ExpiresByType text/css "access plus 1 month"
     ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
