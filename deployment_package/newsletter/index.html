@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Read the latest news, scientific insights, and reflections on sustainable menstrual health, biodegradable hygiene, and community impact from Green AVIC.">
+    <meta name="keywords" content="Green AVIC news, sustainable menstrual care blog, biodegradable sanitary pads, women's health insights, eco-friendly period care, plant-based hygiene">
+    <meta name="author" content="Green AVIC">
+    <meta name="robots" content="index, follow">
+
+    <title>News & Insights | Green AVIC - Sustainable Menstrual Care</title>
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://newsletter.greenavic.org/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://newsletter.greenavic.org/">
+    <meta property="og:title" id="ogTitle" content="News & Insights | Green AVIC">
+    <meta property="og:description" id="ogDesc" content="Explore stories, research, and insights on sustainable menstrual wellness and eco-friendly innovation from Green AVIC.">
+    <meta property="og:image" id="ogImage" content="https://greenavic.org/assets/images/brand/greenavic-logo-real.png">
+    <meta property="og:site_name" content="Green AVIC">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://newsletter.greenavic.org/">
+    <meta name="twitter:title" id="twTitle" content="News & Insights | Green AVIC">
+    <meta name="twitter:description" id="twDesc" content="Explore stories, research, and insights on sustainable menstrual wellness and eco-friendly innovation from Green AVIC.">
+    <meta name="twitter:image" id="twImage" content="https://greenavic.org/assets/images/brand/greenavic-logo-real.png">
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#4CAF50">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" href="assets/images/brand/favicon.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="assets/css/blog.css">
+
+    <!-- JSON-LD Structured Data Container -->
+    <script type="application/ld+json" id="articleSchema">
+    {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "Green AVIC News & Insights",
+        "description": "Stories, research and perspectives on plant-based biodegradable menstrual care and women's health.",
+        "url": "https://newsletter.greenavic.org/",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Green AVIC",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://greenavic.org/assets/images/brand/greenavic-logo-real.png"
+            }
+        }
+    }
+    </script>
+</head>
+<body class="blog-page">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="https://greenavic.org/" aria-label="Green AVIC Home">
+                        <img src="assets/images/brand/greenavic-logo-real.png" alt="Green AVIC">
+                    </a>
+                </div>
+                <nav class="nav" aria-label="Main Navigation">
+                    <ul class="nav-list">
+                        <li><a href="https://greenavic.org/#home">HOME</a></li>
+                        <li><a href="https://greenavic.org/#about">ABOUT US</a></li>
+                        <li><a href="https://greenavic.org/#mission">OUR MISSION</a></li>
+                        <li><a href="https://greenavic.org/story">OUR STORY</a></li>
+                        <li><a href="https://newsletter.greenavic.org/" class="active-nav">NEWSLETTER</a></li>
+                        <li><a href="https://greenavic.org/#contact">CONTACT</a></li>
+                        <li class="nav-cta"><a href="https://greenavic.org/products" class="btn-shop-nav">SHOP NOW</a></li>
+                    </ul>
+                    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main id="mainContent">
+        <!-- Hero Section -->
+        <section class="blog-hero">
+            <div class="container">
+                <div class="blog-hero-content">
+                    <span class="hero-badge">EDITORIAL &amp; PERSPECTIVES</span>
+                    <h1 class="blog-hero-title">News &amp; Insights</h1>
+                    <p class="blog-hero-subtitle">
+                        Thoughtful discussions on plant-based material science, menstrual equity, ecological health, and our ongoing journey to empower women naturally.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Area: Featured Article or Reader Mode or Empty State -->
+        <section class="blog-content-section">
+            <div class="container">
+
+                <!-- Loading State Skeleton -->
+                <div id="blogLoading" class="blog-loading-state" aria-live="polite">
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-body">
+                            <div class="skeleton-pill"></div>
+                            <div class="skeleton-title"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="blogError" class="blog-state-card blog-error-state" style="display: none;" role="alert">
+                    <div class="state-icon error-icon" aria-hidden="true">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <h2>Unable to Load Publication</h2>
+                    <p>We encountered a temporary issue retrieving the latest article. Please refresh the page or try again in a few moments.</p>
+                    <button type="button" class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
+                </div>
+
+                <!-- Empty State (No published article) -->
+                <div id="blogEmpty" class="blog-state-card blog-empty-state" style="display: none;">
+                    <div class="state-icon leaf-icon" aria-hidden="true">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+                        </svg>
+                    </div>
+                    <h2>Fresh Perspectives in the Works</h2>
+                    <p>
+                        Our team is currently preparing thoughtful research, sustainability dispatches, and educational articles on eco-friendly menstrual care. Check back soon for our latest publication!
+                    </p>
+                    <div class="empty-actions">
+                        <a href="story" class="btn btn-secondary">Learn Our Story</a>
+                        <a href="products" class="btn btn-primary">Discover Fearless Pads</a>
+                    </div>
+                </div>
+
+                <!-- Article Overview / Featured Article Card -->
+                <article id="blogFeatured" class="blog-featured-card" style="display: none;">
+                    <div class="featured-media" id="featuredMediaContainer">
+                        <img id="featuredImage" src="" alt="" loading="eager">
+                    </div>
+                    <div class="featured-details">
+                        <div class="article-meta">
+                            <span id="featuredCategory" class="category-badge">Sustainability</span>
+                            <span class="meta-divider" aria-hidden="true">•</span>
+                            <time id="featuredDate" datetime="">October 13, 2026</time>
+                            <span class="meta-divider" aria-hidden="true">•</span>
+                            <span id="featuredReadTime" class="read-time">3 min read</span>
+                        </div>
+                        <h2 id="featuredTitle" class="featured-title"></h2>
+                        <p id="featuredExcerpt" class="featured-excerpt"></p>
+                        <div class="featured-footer">
+                            <div class="author-info">
+                                <span class="author-label">By</span>
+                                <strong id="featuredAuthor" class="author-name">Green AVIC</strong>
+                            </div>
+                            <button type="button" id="btnReadArticle" class="btn btn-primary btn-read-action">
+                                <span>Read Full Article</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Full Article Reader Mode View -->
+                <article id="blogReader" class="blog-reader-view" style="display: none;">
+                    <!-- Reader Navigation -->
+                    <div class="reader-top-bar">
+                        <button type="button" id="btnBackToOverview" class="btn-back">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>Back to News &amp; Insights</span>
+                        </button>
+                        <div class="reader-share-top">
+                            <span class="share-text">Share:</span>
+                            <button type="button" class="btn-share" id="btnShareTwitter" aria-label="Share on X (Twitter)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-share" id="btnShareLinkedIn" aria-label="Share on LinkedIn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-share" id="btnCopyLink" aria-label="Copy Article Link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reader Header -->
+                    <header class="reader-header">
+                        <div class="reader-meta">
+                            <span id="readerCategory" class="category-badge"></span>
+                            <span class="meta-divider" aria-hidden="true">•</span>
+                            <time id="readerDate" datetime=""></time>
+                            <span class="meta-divider" aria-hidden="true">•</span>
+                            <span id="readerReadTime" class="read-time"></span>
+                        </div>
+                        <h1 id="readerTitle" class="reader-title"></h1>
+                        <p id="readerExcerpt" class="reader-lead"></p>
+                        <div class="reader-author-bar">
+                            <div class="author-avatar-badge" aria-hidden="true">GA</div>
+                            <div class="author-meta-details">
+                                <span class="author-byline">Published by</span>
+                                <strong id="readerAuthor" class="author-name">Green AVIC</strong>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Reader Featured Image -->
+                    <figure id="readerFigure" class="reader-figure">
+                        <img id="readerImage" src="" alt="">
+                        <figcaption id="readerCaption" class="reader-caption"></figcaption>
+                    </figure>
+
+                    <!-- Reader Rich Text Body -->
+                    <div id="readerBody" class="reader-body-content"></div>
+
+                    <!-- Article Footnote & CTA -->
+                    <footer class="reader-footer">
+                        <div class="reader-cta-card">
+                            <div class="cta-text">
+                                <h3>Care for yourself. Protect the planet.</h3>
+                                <p>Discover our plant-based, 100% biodegradable sanitary pads designed for breathable protection without compromise.</p>
+                            </div>
+                            <a href="products" class="btn btn-primary">Shop Fearless Pads</a>
+                        </div>
+
+                        <div class="reader-bottom-nav">
+                            <button type="button" id="btnBackToOverviewBottom" class="btn-back">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                                <span>Back to News &amp; Insights</span>
+                            </button>
+                        </div>
+                    </footer>
+                </article>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="assets/images/brand/greenavic-logo-real.png" alt="Green AVIC" class="footer-logo">
+                    <p>Empowering women sustainably</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="https://greenavic.org/#about">About Us</a></li>
+                        <li><a href="https://greenavic.org/products">Products</a></li>
+                        <li><a href="https://greenavic.org/story">Our Story</a></li>
+                        <li><a href="https://greenavic.org/founder">Our Founder</a></li>
+                        <li><a href="https://greenavic.org/#mission">Our Mission</a></li>
+                        <li><a href="https://greenavic.org/#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">FAQs</a></li>
+                        <li><a href="#">Health Education</a></li>
+                        <li><a href="#">Sustainability</a></li>
+                        <li><a href="https://newsletter.greenavic.org">Newsletter</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Green AVIC. All rights reserved.</p>
+                <div class="social-links" style="margin-top: 15px;">
+                    <a href="https://x.com/GreenAVIC" target="_blank" style="margin: 0 10px; color: #fff;">X (@GreenAVIC)</a>
+                    <a href="https://instagram.com/green.avic" target="_blank" style="margin: 0 10px; color: #fff;">Instagram (@green.avic)</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Copy Toast Notification -->
+    <div id="copyToast" class="toast-notification" role="status" aria-live="polite">
+        Link copied to clipboard!
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/main.js" defer></script>
+    <script src="assets/js/blog.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Environment & Secrets (Never commit production credentials)
+.env
+.env.*
+*.env
+config.php
+cms-core/.env
+deployment_package/cms-core/.env
+
+# Temporary / editor files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+*.bak
+*~
+.vscode/
+.idea/

@@ -10,7 +10,7 @@
 
     # Protect data directory and sensitive file extensions
     RewriteRule ^data/ - [F,L]
-    <FilesMatch "(?i)\.(json|bak|tmp|lock|config)$">
+    <FilesMatch "(?i)\.(json|bak|tmp|lock|config|env|env\..*)$">
         Require all denied
     </FilesMatch>
 
@@ -24,8 +24,12 @@
     RewriteCond %{REQUEST_FILENAME}\.html -f
     RewriteRule ^(.*)$ $1.html [L,QSA]
 
-    # Redirect .html requests to clean URLs
-    RewriteCond %{THE_REQUEST} ^GET\ /[^?\s]*\.html
+    # Redirect /index.html requests to root /
+    RewriteCond %{THE_REQUEST} ^GET\ /index\.html [NC]
+    RewriteRule ^index\.html$ / [L,R=301]
+
+    # Redirect other .html requests to clean URLs
+    RewriteCond %{THE_REQUEST} ^GET\ /([^?\s]+)\.html
     RewriteRule ^(.*)\.html$ /$1 [L,R=301]
 </IfModule>
 

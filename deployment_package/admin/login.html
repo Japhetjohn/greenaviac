@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Green AVIC Content Studio</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Fonts & Favicon -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <style>
+        :root {
+            --green-primary: #4CAF50;
+            --green-hover: #45a049;
+            --green-dark: #0D3D2F;
+            --green-light: #E8F5E9;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #E2E8E2;
+            --card-shadow: 0 12px 36px rgba(13, 61, 47, 0.08);
+            --danger: #D32F2F;
+            --danger-bg: #FFEBEE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #F4F8F4 0%, #EBF3EB 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: var(--text-main);
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 440px;
+            padding: 44px 38px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--green-primary), #B8F542);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-logo {
+            height: 60px;
+            width: auto;
+            margin-bottom: 20px;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--green-dark);
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .alert-box {
+            display: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 22px;
+            line-height: 1.45;
+        }
+
+        .alert-error {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid rgba(211, 47, 47, 0.2);
+        }
+
+        .alert-success {
+            background: var(--green-light);
+            color: #2E7D32;
+            border: 1px solid rgba(46, 125, 50, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--green-dark);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #FAFCFA;
+            color: var(--text-main);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--green-primary);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+            background: #ffffff;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--green-dark);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--green-primary);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: var(--green-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.35);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .login-footer {
+            margin-top: 26px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .login-footer a {
+            color: var(--green-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <header class="login-header">
+            <a href="https://greenavic.org" aria-label="Green AVIC Home">
+                <img src="assets/images/brand/greenavic-logo-real.png" alt="Green AVIC Logo" class="login-logo">
+            </a>
+            <h1 class="login-title">Content Management</h1>
+            <p class="login-subtitle">Secure administrative access to publish and manage Green AVIC News &amp; Insights.</p>
+        </header>
+
+        <div id="alertBox" class="alert-box" role="alert" aria-live="assertive"></div>
+
+        <form id="loginForm" novalidate>
+            <div class="form-group">
+                <label for="emailInput" class="form-label">Administrator Email</label>
+                <input 
+                    type="email" 
+                    id="emailInput" 
+                    class="form-control" 
+                    value="japhetjohnk@gmail.com" 
+                    placeholder="japhetjohnk@gmail.com" 
+                    required 
+                    autocomplete="username" 
+                    autocapitalize="none"
+                    spellcheck="false"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="passwordInput" class="form-label">Password</label>
+                <div class="password-wrapper">
+                    <input 
+                        type="password" 
+                        id="passwordInput" 
+                        class="form-control" 
+                        placeholder="••••••••••••" 
+                        required 
+                        autocomplete="current-password"
+                    >
+                    <button type="button" id="togglePasswordBtn" class="password-toggle-btn" aria-label="Show password">
+                        <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+                <span class="spinner" id="btnSpinner"></span>
+                <span id="btnText">Sign In</span>
+            </button>
+        </form>
+
+        <footer class="login-footer">
+            <p><a href="https://newsletter.greenavic.org">&larr; Return to News &amp; Insights</a></p>
+            <p style="margin-top: 8px; font-size: 0.8rem;">
+                First time? <a href="setup.php">Initialize Administrator Account</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            const emailInput = document.getElementById('emailInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const btnText = document.getElementById('btnText');
+            const alertBox = document.getElementById('alertBox');
+
+            function showAlert(msg, isSuccess = false) {
+                alertBox.textContent = msg;
+                alertBox.className = 'alert-box ' + (isSuccess ? 'alert-success' : 'alert-error');
+                alertBox.style.display = 'block';
+            }
+
+            function hideAlert() {
+                alertBox.style.display = 'none';
+            }
+
+            // Check if already authenticated
+            async function checkAuthStatus() {
+                try {
+                    const res = await fetch('api/auth.php?action=check', { cache: 'no-cache' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.authenticated) {
+                            window.location.replace('./');
+                        }
+                    }
+                } catch (e) {}
+            }
+            checkAuthStatus();
+
+            // Toggle password visibility
+            togglePasswordBtn.addEventListener('click', () => {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                togglePasswordBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                togglePasswordBtn.innerHTML = isPassword ? `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                ` : `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                `;
+            });
+
+            // Handle submission
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideAlert();
+
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+
+                if (!email || !password) {
+                    showAlert('Please enter both your administrator email and password.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                btnSpinner.style.display = 'inline-block';
+                btnText.textContent = 'Verifying...';
+
+                try {
+                    const payload = {
+                        action: 'login',
+                        email: email,
+                        password: password
+                    };
+
+                    const res = await fetch('api/auth.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok && data.success) {
+                        showAlert('Sign in successful. Redirecting...', true);
+                        sessionStorage.setItem('greenavic_csrf', data.csrf_token || '');
+                        if (data.must_change_password) {
+                            sessionStorage.setItem('greenavic_must_change', '1');
+                        } else {
+                            sessionStorage.removeItem('greenavic_must_change');
+                        }
+                        setTimeout(() => {
+                            window.location.replace('./');
+                        }, 400);
+                    } else {
+                        showAlert(data.error || 'Authentication failed. Please verify credentials.');
+                        submitBtn.disabled = false;
+                        btnSpinner.style.display = 'none';
+                        btnText.textContent = 'Sign In';
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                    }
+                } catch (error) {
+                    showAlert('Connection error. Please check your network and try again.');
+                    submitBtn.disabled = false;
+                    btnSpinner.style.display = 'none';
+                    btnText.textContent = 'Sign In';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

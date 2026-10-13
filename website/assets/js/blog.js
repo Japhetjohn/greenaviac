@@ -143,10 +143,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderArticle(article) {
         currentArticle = article;
 
+        function decodeEntities(str) {
+            if (!str) return '';
+            const t = document.createElement('textarea');
+            t.innerHTML = str;
+            return t.value;
+        }
+
         const formattedDate = formatDate(article.published_at || article.updated_at);
         const readTimeStr = `${article.reading_time || 3} min read`;
-        const authorName = article.author || 'Green AVIC';
-        const categoryName = article.category || 'Sustainability';
+        const authorName = decodeEntities(article.author || 'Green AVIC');
+        const categoryName = decodeEntities(article.category || 'Sustainability');
+        const cleanTitle = decodeEntities(article.title || '');
+        const cleanExcerpt = decodeEntities(article.excerpt || '');
 
         // 1. Featured Overview Card
         const featTitle = document.getElementById('featuredTitle');
@@ -158,8 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const featImage = document.getElementById('featuredImage');
         const featMediaContainer = document.getElementById('featuredMediaContainer');
 
-        if (featTitle) featTitle.textContent = article.title;
-        if (featExcerpt) featExcerpt.textContent = article.excerpt;
+        if (featTitle) featTitle.textContent = cleanTitle;
+        if (featExcerpt) featExcerpt.textContent = cleanExcerpt;
         if (featCategory) featCategory.textContent = categoryName;
         if (featDate) {
             featDate.textContent = formattedDate;
@@ -190,8 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const readImage = document.getElementById('readerImage');
         const readCaption = document.getElementById('readerCaption');
 
-        if (readTitle) readTitle.textContent = article.title;
-        if (readExcerpt) readExcerpt.textContent = article.excerpt;
+        if (readTitle) readTitle.textContent = cleanTitle;
+        if (readExcerpt) readExcerpt.textContent = cleanExcerpt;
         if (readCategory) readCategory.textContent = categoryName;
         if (readDate) {
             readDate.textContent = formattedDate;

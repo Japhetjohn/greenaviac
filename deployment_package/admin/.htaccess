@@ -1,0 +1,60 @@
+# Green AVIC Content Studio — Hostinger Apache Configuration
+# Clean URLs & Security
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Force HTTPS (Production)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # 2. Canonical Clean URLs (Strip index.html, login.html, setup.php, invite.php)
+    RewriteCond %{THE_REQUEST} ^GET\ /index\.html [NC]
+    RewriteRule ^index\.html$ / [L,R=301]
+
+    RewriteCond %{THE_REQUEST} ^GET\ /login\.html [NC]
+    RewriteRule ^login\.html$ /login [L,R=301]
+
+    RewriteCond %{THE_REQUEST} ^GET\ /setup\.php [NC]
+    RewriteRule ^setup\.php$ /setup [L,R=301]
+
+    RewriteCond %{THE_REQUEST} ^GET\ /invite\.php [NC]
+    RewriteRule ^invite\.php$ /invite [L,R=301]
+
+    # 3. Clean Routes
+    RewriteRule ^login/?$ login.html [L]
+    RewriteRule ^setup/?$ setup.php [L]
+    RewriteRule ^invite/?$ invite.php [L]
+
+    # 4. API & Script Clean URLs
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+
+    # 5. Clean HTML page URLs
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.html -f
+    RewriteRule ^(.*)$ $1.html [L,QSA]
+</IfModule>
+
+# Protect sensitive files and credentials
+<FilesMatch "(?i)\.(lock|json|bak|config|env|env\..*)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+Options -Indexes
+DirectoryIndex index.html
