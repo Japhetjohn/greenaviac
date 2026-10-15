@@ -25,21 +25,26 @@ if ($method === 'GET') {
             SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN status = 'unsubscribed' THEN 1 ELSE 0 END) as unsubscribed
             FROM subscribers
         ");
-        $stats = $statsStmt->fetch() ?: ['total' => 0, 'active' => 0, 'unsubscribed' => 0];
+        $stats = $statsStmt->fetch() ?: ['total' => 0, 'active' => 0, 'pending' => 0, 'unsubscribed' => 0];
 
-        // 2. Subscribers list (most recent 200)
+        // 2. Rolling 24-hour quota
+        $rollingUsed = get_rolling_24h_sent_count($pdo);
+        $availableQuota = get_available_smtp_quota($pdo);
+
+        // 3. Subscribers list (most recent 200)
         $subStmt = $pdo->query("
-            SELECT id, email, status, subscribed_at, unsubscribed_at 
+            SELECT id, email, status, created_at, confirmed_at, unsubscribed_at 
             FROM subscribers 
-            ORDER BY subscribed_at DESC 
+            ORDER BY created_at DESC 
             LIMIT 200
         ");
         $subscribers = $subStmt->fetchAll();
 
-        // 3. Latest Campaign
+        // 4. Latest Campaign
         $campStmt = $pdo->query("
             SELECT * FROM newsletter_campaigns 
             ORDER BY created_at DESC 
@@ -53,14 +58,21 @@ if ($method === 'GET') {
                 SELECT id as delivery_id, email, error_message, sent_at 
                 FROM newsletter_deliveries 
                 WHERE campaign_id = ? AND status = 'failed' 
-                ORDER BY sent_at DESC 
+                ORDER BY id DESC 
                 LIMIT 50
             ");
             $failStmt->execute([$latestCampaign['id']]);
             $failedDeliveries = $failStmt->fetchAll();
         }
 
-        // 4. SMTP configuration status
+        // 5. Cron & System Settings
+        $cronStmt = $pdo->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('last_cron_run', 'cron_secret')");
+        $cronStmt->execute();
+        $settingsRows = $cronStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        $lastCronRun = $settingsRows['last_cron_run'] ?? null;
+        $cronSecret  = $settingsRows['cron_secret'] ?? 'greenavic_cron_sec_8f7b2a9e3d4c1';
+
+        // 6. SMTP configuration status
         $mailer = new GreenAvicMailer();
         $smtpStatus = [
             'configured' => $mailer->isConfigured(),
@@ -75,7 +87,17 @@ if ($method === 'GET') {
             'stats'             => [
                 'total'        => (int)($stats['total'] ?? 0),
                 'active'       => (int)($stats['active'] ?? 0),
+                'pending'      => (int)($stats['pending'] ?? 0),
                 'unsubscribed' => (int)($stats['unsubscribed'] ?? 0)
+            ],
+            'quota'             => [
+                'rolling_24h_used'  => $rollingUsed,
+                'rolling_24h_limit' => HOSTINGER_24H_LIMIT,
+                'available_quota'   => $availableQuota
+            ],
+            'cron'              => [
+                'last_run' => $lastCronRun,
+                'secret'   => $cronSecret
             ],
             'subscribers'       => $subscribers,
             'latest_campaign'   => $latestCampaign,
@@ -219,6 +241,19 @@ if ($method === 'POST') {
             json_response(['error' => $result['error'] ?? 'Retry attempt failed.'], 500);
         }
     }
+
+    // ------------------------------------------------------
+    // ACTION: Process Next Queue Batch (Manual Trigger)
+    // ------------------------------------------------------
+    if ($action === 'process_batch') {
+        $result = process_campaign_queue($pdo, 15);
+        json_response([
+            'success' => true,
+            'result'  => $result,
+            'message' => 'Queue batch processed.'
+        ]);
+    }
+
 
     // ------------------------------------------------------
     // ACTION: Send Test Email

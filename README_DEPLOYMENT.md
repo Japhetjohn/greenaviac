@@ -1,139 +1,117 @@
-# Green AVIC News & Insights CMS — Hostinger Deployment & Email Newsletter Guide
+# Green AVIC Newsletter System — Hostinger Deployment Guide
 
-This guide details the complete process for deploying the Green AVIC CMS to **Hostinger Single Web Hosting** with **MariaDB**, **PHP 8.3**, and **Hostinger SMTP Email Newsletter broadcasts**.
+This document provides complete, beginner-friendly instructions for deploying the **Green AVIC News & Insights CMS and Email Newsletter System** to **Hostinger Single Web Hosting** (`PHP 8.3`, `MariaDB`, manual upload via hPanel File Manager & phpMyAdmin).
 
 ---
 
-## Architecture Overview
+## 1. Hosting Environment & Architecture
+
+Hostinger Single Web Hosting does not provide SSH or Node.js. All files are pre-compiled and bundled with official **PHPMailer v6.9.3** (zero Composer needed on the server).
+
+### Subdomain Document Roots in Hostinger `public_html`:
 
 ```
 public_html/
-├── (Existing website: greenavic.org preserved)
+├── (Existing website: https://greenavic.org is preserved untouched)
+│
 ├── newsletter/                 <-- Document Root for https://newsletter.greenavic.org
 │   ├── index.html              <-- Public News & Insights Reader + Email Subscription Box
+│   ├── confirm.php             <-- Double Opt-In Verification Page (Activates subscriber)
 │   ├── unsubscribe.php         <-- 1-Click Secure Unsubscribe Page (RFC 8058 compliant)
 │   ├── api/
-│   │   ├── article.php         <-- Public Article API
-│   │   └── subscribe.php       <-- Public Email Subscription API (Honeypot + Anti-Spam)
-│   ├── assets/                 <-- Styles, scripts, brand images
-│   └── uploads/                <-- Writable Cover Image Directory (Script execution disabled)
+│   │   ├── article.php         <-- Public Published Article API
+│   │   └── subscribe.php       <-- Public Subscription API (Honeypot + Anti-Spam + Double Opt-In)
+│   ├── assets/                 <-- CSS, JS, brand logos, icons
+│   └── uploads/                <-- Article Cover Images (Script execution blocked by .htaccess)
+│
 ├── admin/                      <-- Document Root for https://admin.greenavic.org
 │   ├── index.html              <-- Content Studio, Publication Editor & Subscriber Management
 │   ├── login.html              <-- Admin Login
-│   ├── setup.php               <-- Secure One-Time Admin Setup (Self-locking)
+│   ├── setup.php               <-- Secure One-Time Initial Administrator Setup (Self-locking)
 │   ├── invite.php              <-- Co-Admin / Client Onboarding Link
-│   ├── api/                    <-- Admin Auth, Article, Uploads, and Subscribers APIs
-│   └── admin.css / admin.js
-└── cms-core/                   <-- Shared Core Backend (Direct web access strictly blocked)
-    ├── .env                    <-- MariaDB & Hostinger SMTP Credentials
-    ├── config.php              <-- System Configuration & Fallbacks
-    ├── db.php                  <-- PDO Database Connection Handler & Auto-Migration
+│   ├── admin.css / admin.js    <-- Studio UI Logic & Queue Controls
+│   └── api/
+│       ├── article.php         <-- Publication Engine & Campaign Dispatcher
+│       ├── auth.php            <-- Admin Session & Authentication
+│       ├── cron.php            <-- Background Delivery Cron Endpoint
+│       ├── subscribers.php     <-- Audience Management & Batch Process API
+│       └── upload.php          <-- Secure Image Upload Handler (GD / Imagick)
+│
+└── cms-core/                   <-- Shared Backend (Direct web access blocked by .htaccess)
+    ├── .env.example            <-- Configuration Template (Rename to .env)
+    ├── config.php              <-- Configuration Loader & Path Resolvers
+    ├── db.php                  <-- Database Connection & Auto-Migrator
     ├── common.php              <-- CSRF, Rate Limiting & Session Security
-    ├── mailer.php              <-- Zero-Dependency Native PHP 8.3 SSL/TLS Socket SMTP Client
-    └── newsletter_service.php  <-- Responsive HTML Email Renderer & Campaign Dispatcher
+    ├── mailer.php              <-- PHPMailer SMTP Client (Hostinger SSL 465)
+    ├── newsletter_service.php  <-- Responsive Email Renderer, 100/24h Quota & Delivery Queue
+    └── PHPMailer/              <-- Bundled PHPMailer v6.9.3 (PHP 8.3 compatible)
 ```
 
 ---
 
-## Step 1: Create Hostinger Email Account & Obtain SMTP Credentials
+## 2. Pre-Deployment: Mailbox & SMTP Settings
 
-To allow Green AVIC to automatically email published newsletters to your subscribers:
+Hostinger Single Web Hosting includes webmail. Create the sender mailbox before sending:
 
 1. Log in to [Hostinger hPanel](https://hpanel.hostinger.com/).
-2. In the top navigation or sidebar, go to **Emails** ➔ click **Manage** next to `greenavic.org`.
+2. Navigate to **Emails** ➔ click **Manage** next to `greenavic.org`.
 3. Click **Create Email Account**:
-   - **Email Address**: `newsletter@greenavic.org` (or your preferred address).
-   - **Password**: Create a strong password (save this for `.env`).
-4. Click **Create**.
-5. Note your Hostinger SMTP details:
+   - **Email Address**: `newsletter@greenavic.org`
+   - **Password**: Set your mailbox password.
+4. Note your Hostinger SMTP credentials:
    - **SMTP Host**: `smtp.hostinger.com`
-   - **SMTP Port**: `465` (SSL) or `587` (TLS)
+   - **SMTP Port**: `465`
+   - **Encryption**: `SSL`
    - **SMTP Username**: `newsletter@greenavic.org`
-   - **SMTP Password**: The password you just created.
+   - **SMTP Password**: Your mailbox password.
+
+> **DNS Records (SPF & DKIM):** In hPanel ➔ **Emails** ➔ **Email Settings**, verify that SPF and DKIM are enabled. This ensures your newsletter emails land directly in subscriber inboxes instead of spam.
 
 ---
 
-## Step 2: Configure Hostinger DNS Records (SPF, DKIM, DMARC)
+## 3. Database Setup via phpMyAdmin
 
-Proper email authentication prevents your emails from landing in spam/junk folders.
+1. In hPanel, go to **Databases** ➔ **Management** and create a MySQL/MariaDB database (or use your existing one).
+2. Click **Enter phpMyAdmin** next to your database.
+3. Import the database schema:
+   - **If you already have articles and users in your database:** Click the **Import** tab, choose `migration.sql`, and click **Go**. This upgrades the schema with double opt-in subscriber tables, delivery queue, and Hostinger 24h quota tracking without touching existing articles.
+   - **If this is a completely fresh installation:** Click the **Import** tab, choose `schema.sql`, and click **Go**.
 
-1. In hPanel, navigate to **Advanced** ➔ **DNS Zone Editor** (or **Emails** ➔ **Email Settings** ➔ **DNS Records**).
-2. Ensure the following DNS records are present:
-   - **SPF Record (TXT)**:
-     - **Name / Host**: `@` (or leave blank depending on interface)
-     - **Type**: `TXT`
-     - **Value**: `v=spf1 include:_spf.mail.hostinger.com ~all`
-     - **TTL**: `14400`
-   - **DKIM Record (TXT / CNAME)**:
-     - In Hostinger Email Settings, Hostinger will automatically generate the DKIM record (e.g. `hostingermail._domainkey`). Click **Enable / Verify DKIM** if prompted.
-   - **DMARC Record (TXT)**:
-     - **Name / Host**: `_dmarc`
-     - **Type**: `TXT`
-     - **Value**: `v=DMARC1; p=none; sp=none; rua=mailto:newsletter@greenavic.org`
-     - **TTL**: `14400`
+*(Note: Even if you do not run the SQL script manually, `cms-core/db.php` includes an automatic schema migrator that will create and alter the necessary tables on first request).*
 
 ---
 
-## Step 3: Create Your MariaDB Database in Hostinger
+## 4. Upload Files via Hostinger File Manager
 
-1. In hPanel, navigate to **Databases** ➔ **Management**.
-2. Under **Create a New MySQL Database And User**:
-   - **Database Name**: Enter a name (e.g., `greenavic_cms` — Hostinger prefixes this, e.g., `u123456789_greenavic_cms`).
-   - **Username**: Enter a username (e.g., `admin`).
-   - **Password**: Enter a strong password.
-3. Click **Create**.
-4. Note the full Database Name, Username, and Password.
-
----
-
-## Step 4: Import `schema.sql` via phpMyAdmin
-
-1. In hPanel Databases, click **Enter phpMyAdmin** next to your database.
-2. Click the **Import** tab at the top.
-3. Choose `schema.sql` from this package and click **Go / Import**.
-4. The following 7 tables will be created:
-   - `users`: Admin credentials
-   - `articles`: Current live publication
-   - `drafts`: Working draft
-   - `login_attempts`: Brute-force protection
-   - `subscribers`: Single opt-in email audience & unique 1-click unsubscribe tokens
-   - `newsletter_campaigns`: Broadcast history and delivery metrics
-   - `newsletter_deliveries`: Per-subscriber logs with duplicate prevention
-
-*(Note: If you have already imported the database previously, the CMS auto-migrator in `cms-core/db.php` will automatically create the subscriber tables for you).*
+1. In hPanel, go to **Files** ➔ **File Manager** (access `public_html`).
+2. Upload `greenavic-newsletter-deployment.zip` to `public_html`.
+3. Right-click `greenavic-newsletter-deployment.zip` and select **Extract**.
+4. Set the destination to `.` (`public_html`).
+5. Ensure the extracted folders match the structure:
+   - `public_html/newsletter/`
+   - `public_html/admin/`
+   - `public_html/cms-core/`
+6. Delete `greenavic-newsletter-deployment.zip` after extraction.
 
 ---
 
-## Step 5: Upload Files via Hostinger File Manager
+## 5. Configure `.env` Credentials
 
-1. In hPanel, go to **Files** ➔ **File Manager**.
-2. Open the `public_html` directory.
-3. Upload `greenavic-production.zip`.
-4. Right-click `greenavic-production.zip` and select **Extract**.
-5. Choose `.` (current folder `public_html`) as the destination.
-6. This extracts:
-   - `newsletter/` ➔ `public_html/newsletter/`
-   - `admin/` ➔ `public_html/admin/`
-   - `cms-core/` ➔ `public_html/cms-core/`
-7. Delete the ZIP file after extraction.
-
----
-
-## Step 6: Configure `.env` with Database & SMTP Credentials
-
-1. In File Manager, open `public_html/cms-core/`.
-2. Locate `.env` (or duplicate `.env.example` to `.env`).
-3. Right-click `.env` and click **Edit**:
+1. In File Manager, navigate to `public_html/cms-core/`.
+2. Find `.env.example`.
+3. Rename or copy `.env.example` to `.env`.
+4. Right-click `.env` and click **Edit**:
    ```ini
-   # Database Credentials
+   # Database Credentials (from Hostinger hPanel -> Databases)
    DB_HOST=localhost
-   DB_NAME=u123456789_greenavic_cms
-   DB_USER=u123456789_admin
-   DB_PASS=YOUR_DATABASE_PASSWORD_HERE
+   DB_NAME=u773570837_greenavic_cms
+   DB_USER=u773570837_admin
+   DB_PASS=YOUR_DATABASE_PASSWORD
    DB_PORT=3306
 
-   # Security Token
-   SESSION_SECRET=YOUR_64_CHAR_HEX_TOKEN
+   # Security Token (Any random 32-64 character string)
+   SESSION_SECRET=d89b37190e2f5b6697843232145eefab7c81a952d7e008fa9131d8bf62ca1234
+   SESSION_LIFETIME=86400
 
    # Subdomain URLs
    NEWSLETTER_URL=https://newsletter.greenavic.org
@@ -149,62 +127,61 @@ Proper email authentication prevents your emails from landing in spam/junk folde
    SMTP_FROM_EMAIL=newsletter@greenavic.org
    SMTP_FROM_NAME="Green AVIC"
    ```
+5. Click **Save & Close**.
+
+> **Security Note:** Direct web requests to `public_html/cms-core/` are blocked by `.htaccess` (`Require all denied`). Your database and SMTP credentials cannot be downloaded or viewed via a browser.
+
+---
+
+## 6. Setup Hostinger Background Cron Job
+
+Hostinger Single Web Hosting limits SMTP sending to **100 emails per rolling 24 hours**. 
+When you publish an article, the system immediately sends to available quota and queues the rest in `newsletter_deliveries`. 
+
+To automatically process remaining deliveries across 24-hour cycles:
+
+1. In hPanel, navigate to **Advanced** ➔ **Cron Jobs**.
+2. Select **Hourly** (`0 * * * *`).
+3. Enter the command:
+   ```bash
+   wget -q -O - "https://admin.greenavic.org/api/cron.php?secret=greenavic_cron_sec_8f7b2a9e3d4c1" >/dev/null 2>&1
+   ```
 4. Click **Save**.
 
----
-
-## Step 7: Initialize Administrator Account & Log In
-
-1. Open your browser and go to:
-   ```
-   https://admin.greenavic.org/setup.php
-   ```
-2. Enter your email (`japhetjohnk@gmail.com`) and initial password (`GreenAvic!2026`).
-3. Click **Complete Setup** (creates admin account and permanently locks `setup.php`).
-4. Go to `https://admin.greenavic.org/login.html` and sign in.
-5. On first login, change your temporary password to your private permanent password.
+*(Note: You can also click **"Process Next Batch"** inside Admin Studio at any time to process pending deliveries manually).*
 
 ---
 
-## Step 8: Verifying the Email Newsletter System
+## 7. Administrator Login & Client Onboarding
 
-### 1. Test SMTP Connection
-1. In the top bar of Content Studio (`https://admin.greenavic.org`), click **Subscribers & Broadcasts**.
-2. Under "SMTP Status", verify it displays **Connected**.
-3. Click **Test SMTP**, enter your personal email address, and click OK.
-4. Check your inbox to confirm you received the test email.
-
-### 2. Test Public Subscription
-1. Visit `https://newsletter.greenavic.org`.
-2. Scroll down to the **Join the Green AVIC Community** subscription section.
-3. Enter an email address and click **Subscribe**.
-4. Confirm the success message displays.
-5. In Content Studio ➔ **Subscribers & Broadcasts**, verify that the email now appears as an **ACTIVE** subscriber.
-
-### 3. Test Automatic Email Broadcast on Publish
-1. In Content Studio, click **Write New Post** (or edit current).
-2. Enter a headline, excerpt, and body content (add a cover photo if desired).
-3. Click **Publish Article** ➔ confirm **Yes, Publish Now**.
-4. The system will atomically publish the article to `newsletter.greenavic.org` and automatically dispatch the full article newsletter to all active subscribers.
-5. A confirmation toast will report: `"Broadcast sent: X delivered (0 failed) to X subscribers."`
-6. Check your subscriber inbox:
-   - Notice the Green AVIC emerald header and logo.
-   - Headline, author byline, date, cover photo, and full rich text.
-   - "Read Online on Green AVIC" button.
-   - 1-click **Unsubscribe** link at the bottom.
-
-### 4. Test 1-Click Unsubscribe
-1. Click the **Unsubscribe with one click** link at the bottom of the received newsletter email.
-2. Confirm it opens `https://newsletter.greenavic.org/unsubscribe?token=...` and displays the clean confirmation page: *"You have been unsubscribed. [email] will no longer receive newsletter broadcasts from Green AVIC."*
-3. In Content Studio ➔ **Subscribers & Broadcasts**, verify that the subscriber status has changed to **UNSUBSCRIBED**. Future publications will not email this address.
-4. You can also reactivate or remove any subscriber directly from the Content Studio.
+1. Visit `https://admin.greenavic.org/login`.
+2. Log in with your administrator email and initial password.
+3. If this is the initial login, the system will prompt you to change your temporary password to a permanent one.
+4. **Inviting Your Client or Co-Admin:**
+   - In Admin Studio, click **"Team & Administrators"** (or click the team icon in the top header).
+   - Under **Invite Co-Admin or Client**, click **"Generate Link"**.
+   - Copy the link and send it to your client. She can set her own email and private password to access the studio independently.
 
 ---
 
-## Co-Admin & Client Access
+## 8. End-to-End Verification Checklist
 
-To give your client or team members access without sharing passwords:
-1. In Content Studio, click **Team & Admins** in the top navigation.
-2. Under **Invite Co-Admin or Client**, click **Generate Link**.
-3. Copy the secure invite link and send it to your client.
-4. She can open the link in her browser and set her own email address and private password.
+Perform these quick tests to confirm your system is running in production:
+
+- [ ] **Test SMTP:** In Admin Studio, click **"Subscribers"** ➔ click **"Send Test Email"**. Enter your email and verify that you receive the test message.
+- [ ] **Test Subscription & Double Opt-In:**
+  1. Open `https://newsletter.greenavic.org` in an incognito window.
+  2. Enter an email in the "Subscribe to Green AVIC Updates" section and submit.
+  3. Check your inbox for the **"Confirm your Green AVIC subscription"** email.
+  4. Click the confirmation link. You should see the Green AVIC **"Subscription Confirmed"** page.
+- [ ] **Verify in Admin Studio:**
+  - In Admin Studio ➔ **Subscribers**, verify that the subscriber moves from "Awaiting Confirmation" to "Confirmed Active".
+- [ ] **Test Publishing & Broadcast:**
+  1. In Admin Studio, create or edit an article and click **"Publish Article"**.
+  2. Confirm publication.
+  3. The public website at `https://newsletter.greenavic.org` will update immediately.
+  4. All confirmed subscribers will automatically receive the formatted newsletter email with article title, excerpt, and link to the full article.
+- [ ] **Test 1-Click Unsubscribe:**
+  - Open the received newsletter email, scroll to the bottom, and click **"Unsubscribe"**.
+  - You will see the confirmation page confirming immediate suppression.
+  - In Admin Studio ➔ **Subscribers**, the status updates to "Unsubscribed" and no further broadcasts will be sent to that address.

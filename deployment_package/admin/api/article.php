@@ -198,12 +198,12 @@ if ($method === 'POST') {
             ];
 
             // ------------------------------------------------------
-            // Automatic Email Dispatch to Active Subscribers
+            // Automatic Email Campaign Creation & Batch Dispatch
             // ------------------------------------------------------
             $emailDelivery = null;
             try {
                 require_once dirname(__DIR__, 2) . '/cms-core/newsletter_service.php';
-                $emailDelivery = dispatch_newsletter_campaign($pdo, $articleId, $articleData);
+                $emailDelivery = create_newsletter_campaign($pdo, $articleId, $articleData);
             } catch (Exception $emailEx) {
                 error_log("Newsletter auto-delivery error: " . $emailEx->getMessage());
                 $emailDelivery = [

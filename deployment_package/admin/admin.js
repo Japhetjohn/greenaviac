@@ -972,15 +972,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCloseSubscribersModalBottom = document.getElementById('btnCloseSubscribersModalBottom');
 
     const statActiveSubscribers = document.getElementById('statActiveSubscribers');
+    const statPendingSubscribers = document.getElementById('statPendingSubscribers');
     const statUnsubscribed = document.getElementById('statUnsubscribed');
+    const statQuotaUsed = document.getElementById('statQuotaUsed');
+    const statQuotaAvail = document.getElementById('statQuotaAvail');
     const statSmtpStatus = document.getElementById('statSmtpStatus');
     const statSmtpDesc = document.getElementById('statSmtpDesc');
 
     const campaignCard = document.getElementById('campaignCard');
     const campaignStatusBadge = document.getElementById('campaignStatusBadge');
     const campaignDetails = document.getElementById('campaignDetails');
-    const campaignRetryContainer = document.getElementById('campaignRetryContainer');
+    const btnProcessBatch = document.getElementById('btnProcessBatch');
     const btnRetryCampaign = document.getElementById('btnRetryCampaign');
+
+    const cronStatusPill = document.getElementById('cronStatusPill');
+    const cronCommandText = document.getElementById('cronCommandText');
 
     const btnTestSmtp = document.getElementById('btnTestSmtp');
     const subscribersTableBody = document.getElementById('subscribersTableBody');
@@ -1019,11 +1025,36 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Stats Cards
             if (data.stats) {
                 if (statActiveSubscribers) statActiveSubscribers.textContent = data.stats.active || 0;
+                if (statPendingSubscribers) statPendingSubscribers.textContent = data.stats.pending || 0;
                 if (statUnsubscribed) statUnsubscribed.textContent = data.stats.unsubscribed || 0;
                 if (overviewSubscribersCount) overviewSubscribersCount.textContent = data.stats.active || 0;
             }
 
-            // 2. SMTP Status
+            // 2. Rolling 24-Hour Quota
+            if (data.quota) {
+                if (statQuotaUsed) statQuotaUsed.textContent = `${data.quota.rolling_24h_used} / ${data.quota.rolling_24h_limit} used`;
+                if (statQuotaAvail) statQuotaAvail.textContent = `${data.quota.available_quota} available`;
+            }
+
+            // 3. Cron Job Status & Helper
+            if (data.cron) {
+                if (cronStatusPill) {
+                    if (data.cron.last_run) {
+                        cronStatusPill.style.background = '#E8F5E9';
+                        cronStatusPill.style.color = '#2E7D32';
+                        cronStatusPill.textContent = `Active (${formatDate(data.cron.last_run)})`;
+                    } else {
+                        cronStatusPill.style.background = '#FFF3E0';
+                        cronStatusPill.style.color = '#E65100';
+                        cronStatusPill.textContent = 'Awaiting first run';
+                    }
+                }
+                if (cronCommandText && data.cron.secret) {
+                    cronCommandText.textContent = `wget -q -O - "https://admin.greenavic.org/api/cron.php?secret=${data.cron.secret}" >/dev/null 2>&1`;
+                }
+            }
+
+            // 4. SMTP Status
             if (data.smtp) {
                 if (statSmtpStatus) {
                     statSmtpStatus.innerHTML = data.smtp.configured 
@@ -1037,42 +1068,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // 3. Latest Campaign Card
+            // 5. Latest Campaign Card
             if (data.latest_campaign) {
                 const c = data.latest_campaign;
                 const isSent = c.status === 'sent';
                 const isSending = c.status === 'sending';
-                const badgeClass = isSent ? 'published' : (isSending ? 'draft' : 'empty');
+                const isProcessing = c.status === 'processing';
+                const badgeClass = isSent ? 'published' : ((isSending || isProcessing) ? 'draft' : 'empty');
                 
                 if (campaignStatusBadge) {
                     campaignStatusBadge.className = 'status-badge ' + badgeClass;
                     campaignStatusBadge.textContent = c.status.toUpperCase();
                 }
 
+                const pendingDeliveries = Math.max(0, (parseInt(c.total_subscribers, 10) || 0) - (parseInt(c.sent_count, 10) || 0) - (parseInt(c.failed_count, 10) || 0));
+
                 let detailsHtml = `
                     <div style="margin-bottom: 6px;"><strong>Article:</strong> "${escapeHtml(c.subject)}"</div>
-                    <div><strong>Broadcast Performance:</strong> ${c.sent_count} sent &bull; ${c.failed_count} failed (out of ${c.total_subscribers} subscribers)</div>
-                    <div style="font-size: 11.5px; color: #888; margin-top: 4px;">Sent on ${formatDate(c.created_at)}</div>
+                    <div><strong>Broadcast Performance:</strong> ${c.sent_count} sent &bull; ${c.failed_count} failed &bull; ${pendingDeliveries} queued (out of ${c.total_subscribers} total)</div>
+                    <div style="font-size: 11.5px; color: #888; margin-top: 4px;">Created on ${formatDate(c.created_at)}</div>
                 `;
 
-                if (c.failed_count > 0) {
-                    if (campaignRetryContainer && btnRetryCampaign) {
-                        campaignRetryContainer.style.display = 'block';
+                if (btnProcessBatch) {
+                    if (pendingDeliveries > 0 || isSending || isProcessing) {
+                        btnProcessBatch.style.display = 'inline-block';
+                        btnProcessBatch.textContent = `Process Next Batch (${pendingDeliveries} queued)`;
+                    } else {
+                        btnProcessBatch.style.display = 'none';
+                    }
+                }
+
+                if (btnRetryCampaign) {
+                    if (c.failed_count > 0) {
+                        btnRetryCampaign.style.display = 'inline-block';
                         btnRetryCampaign.dataset.campaignId = c.id;
                         btnRetryCampaign.textContent = `Retry ${c.failed_count} Failed Deliveries`;
+                    } else {
+                        btnRetryCampaign.style.display = 'none';
                     }
-                    if (data.failed_deliveries && data.failed_deliveries.length > 0) {
-                        detailsHtml += `
-                            <div style="margin-top: 10px; padding: 10px; background: #FFF4F4; border-radius: 6px; font-size: 12px; color: #C62828;">
-                                <strong>Delivery Errors:</strong>
-                                <ul style="margin: 6px 0 0 16px; padding: 0;">
-                                    ${data.failed_deliveries.slice(0, 5).map(f => `<li>${escapeHtml(f.email)}: ${escapeHtml(f.error_message || 'Connection error')}</li>`).join('')}
-                                </ul>
-                            </div>
-                        `;
-                    }
-                } else if (campaignRetryContainer) {
-                    campaignRetryContainer.style.display = 'none';
+                }
+
+                if (c.failed_count > 0 && data.failed_deliveries && data.failed_deliveries.length > 0) {
+                    detailsHtml += `
+                        <div style="margin-top: 10px; padding: 10px; background: #FFF4F4; border-radius: 6px; font-size: 12px; color: #C62828;">
+                            <strong>Delivery Errors:</strong>
+                            <ul style="margin: 6px 0 0 16px; padding: 0;">
+                                ${data.failed_deliveries.slice(0, 5).map(f => `<li>${escapeHtml(f.email)}: ${escapeHtml(f.error_message || 'Connection error')}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
                 }
 
                 if (campaignDetails) campaignDetails.innerHTML = detailsHtml;
@@ -1084,10 +1128,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (campaignDetails) {
                     campaignDetails.innerHTML = '<p style="margin: 0; color: #777;">When you publish an article, it will automatically broadcast to all active subscribers.</p>';
                 }
-                if (campaignRetryContainer) campaignRetryContainer.style.display = 'none';
+                if (btnProcessBatch) btnProcessBatch.style.display = 'none';
+                if (btnRetryCampaign) btnRetryCampaign.style.display = 'none';
             }
 
-            // 4. Subscribers Table
+            // 6. Subscribers Table
             if (!data.subscribers || data.subscribers.length === 0) {
                 subscribersTableBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; text-align: center; color: #888;">No subscribers yet. Audience will appear here as users subscribe on newsletter.greenavic.org.</td></tr>';
                 return;
@@ -1096,11 +1141,17 @@ document.addEventListener('DOMContentLoaded', () => {
             let rows = '';
             data.subscribers.forEach(sub => {
                 const isActive = sub.status === 'active';
-                const statusBadge = isActive 
-                    ? '<span style="display:inline-block; font-size:11px; font-weight:700; background:#E8F5E9; color:#2E7D32; padding:2px 8px; border-radius:12px;">ACTIVE</span>'
-                    : '<span style="display:inline-block; font-size:11px; font-weight:700; background:#FFF3E0; color:#E65100; padding:2px 8px; border-radius:12px;">UNSUBSCRIBED</span>';
+                const isPending = sub.status === 'pending';
+                let statusBadge = '';
+                if (isActive) {
+                    statusBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; background:#E8F5E9; color:#2E7D32; padding:2px 8px; border-radius:12px;">ACTIVE</span>';
+                } else if (isPending) {
+                    statusBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; background:#E3F2FD; color:#1565C0; padding:2px 8px; border-radius:12px;">PENDING CONFIRMATION</span>';
+                } else {
+                    statusBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; background:#FFF3E0; color:#E65100; padding:2px 8px; border-radius:12px;">UNSUBSCRIBED</span>';
+                }
                 
-                const subDate = sub.subscribed_at ? new Date(sub.subscribed_at).toLocaleDateString() : '';
+                const subDate = (sub.confirmed_at || sub.created_at) ? new Date(sub.confirmed_at || sub.created_at).toLocaleDateString() : '';
 
                 rows += `
                     <tr style="border-bottom: 1px solid #EAEAEA;">
@@ -1111,9 +1162,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="display: flex; gap: 6px; justify-content: flex-end;">
                                 ${isActive ? `
                                     <button type="button" class="sub-action-btn suppress" onclick="changeSubscriberStatus(${sub.id}, 'suppress')">Suppress</button>
+                                ` : (isPending ? `
+                                    <button type="button" class="sub-action-btn activate" onclick="changeSubscriberStatus(${sub.id}, 'activate')">Confirm</button>
                                 ` : `
                                     <button type="button" class="sub-action-btn activate" onclick="changeSubscriberStatus(${sub.id}, 'activate')">Reactivate</button>
-                                `}
+                                `)}
                                 <button type="button" class="sub-action-btn delete" onclick="deleteSubscriber(${sub.id}, '${escapeHtml(sub.email)}')">Delete</button>
                             </div>
                         </td>
@@ -1186,6 +1239,34 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Network error while deleting subscriber.', true);
         }
     };
+
+    // Process Batch Manually
+    if (btnProcessBatch) {
+        btnProcessBatch.addEventListener('click', async () => {
+            btnProcessBatch.disabled = true;
+            btnProcessBatch.textContent = 'Processing Queue...';
+
+            try {
+                const res = await fetch('api/subscribers.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ action: 'process_batch', csrf_token: csrfToken })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    const r = data.result || {};
+                    showToast(`Batch processed: ${r.sent || 0} sent, ${r.failed || 0} failed (${r.remaining || 0} remaining in queue).`);
+                    loadSubscribersData();
+                } else {
+                    showToast(data.error || 'Failed to process queue batch.', true);
+                }
+            } catch (e) {
+                showToast('Network error while processing queue.', true);
+            } finally {
+                btnProcessBatch.disabled = false;
+            }
+        });
+    }
 
     // Retry Campaign Deliveries
     if (btnRetryCampaign) {

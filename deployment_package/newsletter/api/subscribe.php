@@ -1,12 +1,13 @@
 <?php
 /**
- * Green AVIC Newsletter — Public Subscription API
+ * Green AVIC Newsletter — Double Opt-In Subscription API
  * 
- * Handles single opt-in email subscription with honeypot spam protection,
- * duplicate handling, rate limiting, and unique unsubscribe token generation.
+ * Handles public subscription requests, honeypot spam protection,
+ * duplicate handling, rate limiting, and automated verification email dispatch.
  */
 
 require_once dirname(__DIR__, 2) . '/cms-core/common.php';
+require_once dirname(__DIR__, 2) . '/cms-core/mailer.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['error' => 'Method not allowed. Only POST is accepted.'], 405);
@@ -20,12 +21,11 @@ if (!is_array($data)) {
 }
 
 // 1. Anti-bot Honeypot Check
-// Real users won't fill this hidden field; bots will.
 if (!empty($data['website_url']) || !empty($data['hp_company'])) {
-    // Pretend success so bots don't adapt
+    // Silently succeed so bots don't adapt
     json_response([
         'success' => true,
-        'message' => 'Thank you for subscribing to Green AVIC News & Insights!'
+        'message' => 'Thank you! Please check your email to confirm your subscription.'
     ]);
 }
 
@@ -47,19 +47,21 @@ try {
     $rateStmt = $pdo->prepare("
         SELECT COUNT(*) 
         FROM subscribers 
-        WHERE ip_address = ? AND subscribed_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        WHERE ip_address = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
     ");
     $rateStmt->execute([$clientIp]);
     if ((int)$rateStmt->fetchColumn() >= 10) {
         json_response([
-            'error' => 'Too many subscription requests from your network. Please try again later.'
+            'error' => 'Too many requests from your network. Please try again later.'
         ], 429);
     }
 } catch (Exception $e) {
-    // Graceful fallback if rate check fails
+    // Non-fatal fallback
 }
 
-// 5. Check Existing Subscriber Record
+$mailer = new GreenAvicMailer();
+
+// 5. Handle Subscriber Record & Verification Dispatch
 try {
     $checkStmt = $pdo->prepare("SELECT id, email, status, token FROM subscribers WHERE email = ? LIMIT 1");
     $checkStmt->execute([$email]);
@@ -70,40 +72,53 @@ try {
             json_response([
                 'success' => true,
                 'already_subscribed' => true,
-                'message' => 'You are already subscribed to Green AVIC updates!'
+                'message' => 'You are already a confirmed subscriber to Green AVIC News & Insights!'
             ]);
         }
 
-        // Reactivate previously unsubscribed contact
-        $newToken = bin2hex(random_bytes(32));
+        // Resend confirmation email for pending or reactivating contact
+        $token = bin2hex(random_bytes(32));
         $updateStmt = $pdo->prepare("
             UPDATE subscribers 
-            SET status = 'active', 
+            SET status = 'pending', 
                 token = ?, 
                 ip_address = ?, 
-                subscribed_at = NOW(), 
-                unsubscribed_at = NULL 
+                created_at = NOW() 
             WHERE id = ?
         ");
-        $updateStmt->execute([$newToken, $clientIp, $existing['id']]);
+        $updateStmt->execute([$token, $clientIp, $existing['id']]);
+
+        $confirmUrl = NEWSLETTER_URL . '/confirm?token=' . urlencode($token);
+        $mailResult = $mailer->sendConfirmationEmail($email, $confirmUrl);
+
+        if (!$mailResult['success']) {
+            error_log("Failed to send confirmation email: " . ($mailResult['error'] ?? 'Unknown'));
+        }
 
         json_response([
             'success' => true,
-            'message' => 'Welcome back! Your subscription to Green AVIC updates has been reactivated.'
+            'message' => 'A verification link has been sent to your email. Please check your inbox (and spam folder) to complete your subscription.'
         ]);
     }
 
-    // New Subscriber
+    // New Subscriber: insert with status 'pending' (Double Opt-In)
     $token = bin2hex(random_bytes(32));
     $insertStmt = $pdo->prepare("
-        INSERT INTO subscribers (email, status, token, ip_address, subscribed_at)
-        VALUES (?, 'active', ?, ?, NOW())
+        INSERT INTO subscribers (email, status, token, ip_address, created_at)
+        VALUES (?, 'pending', ?, ?, NOW())
     ");
     $insertStmt->execute([$email, $token, $clientIp]);
 
+    $confirmUrl = NEWSLETTER_URL . '/confirm?token=' . urlencode($token);
+    $mailResult = $mailer->sendConfirmationEmail($email, $confirmUrl);
+
+    if (!$mailResult['success']) {
+        error_log("Failed to send initial confirmation email: " . ($mailResult['error'] ?? 'Unknown'));
+    }
+
     json_response([
         'success' => true,
-        'message' => 'Thank you for subscribing to Green AVIC News & Insights!'
+        'message' => 'Thank you! Please check your inbox (and spam folder) and click the verification link to confirm your subscription.'
     ]);
 
 } catch (Exception $e) {

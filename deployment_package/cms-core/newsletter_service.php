@@ -1,9 +1,12 @@
 <?php
 /**
- * Green AVIC CMS — Newsletter Campaign & Dispatch Service
+ * Green AVIC CMS — Newsletter Campaign & Queue Dispatch Service
  * 
- * Manages email campaign creation, responsive HTML rendering,
- * bulk delivery loop with duplicate-send prevention, and delivery logs.
+ * Implements:
+ * - Controlled batch processing respecting Hostinger's 100 emails / rolling 24 hours limit.
+ * - Double opt-in active subscriber filtering.
+ * - Queueing with duplicate-send prevention and retry handling.
+ * - Responsive HTML email generation.
  */
 
 defined('GREENAVIC_CORE') or define('GREENAVIC_CORE', true);
@@ -11,8 +14,35 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mailer.php';
 
+const HOSTINGER_24H_LIMIT = 100;
+
 /**
- * Render a production-grade, responsive HTML email for a published article.
+ * Calculate the number of emails sent in the rolling 24-hour window
+ */
+function get_rolling_24h_sent_count(PDO $pdo): int {
+    try {
+        $stmt = $pdo->query("
+            SELECT COUNT(*) 
+            FROM newsletter_deliveries 
+            WHERE status = 'sent' AND sent_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        ");
+        return (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        error_log("Rolling 24h count error: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Calculate remaining SMTP sending quota for the current rolling 24 hours
+ */
+function get_available_smtp_quota(PDO $pdo): int {
+    $used = get_rolling_24h_sent_count($pdo);
+    return max(0, HOSTINGER_24H_LIMIT - $used);
+}
+
+/**
+ * Render a production-grade, responsive HTML email for a published article
  */
 function render_newsletter_email(array $article, string $unsubscribeUrl): string {
     $title       = htmlspecialchars($article['title'] ?? 'Green AVIC Update');
@@ -33,7 +63,6 @@ function render_newsletter_email(array $article, string $unsubscribeUrl): string
 
     $logoUrl = rtrim(MAIN_SITE_URL, '/') . '/assets/images/brand/greenavic-logo-real.png';
 
-    // Build Email HTML
     ob_start();
     ?>
 <!DOCTYPE html>
@@ -69,7 +98,6 @@ function render_newsletter_email(array $article, string $unsubscribeUrl): string
     </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #F4F7F4;">
-    <!-- Preheader preview text for inbox -->
     <div style="display: none; font-size: 1px; color: #F4F7F4; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
         <?php echo $excerpt; ?>
     </div>
@@ -180,7 +208,7 @@ function render_newsletter_email(array $article, string $unsubscribeUrl): string
                         <a href="<?php echo MAIN_SITE_URL; ?>" target="_blank" style="color: #B8F542; text-decoration: none; margin: 0 8px;">greenavic.org</a>
                     </div>
                     <p style="margin: 0 0 12px; color: #C8DFD7;">
-                        You received this publication because you subscribed to updates from Green AVIC.<br>
+                        You received this publication because you confirmed your email subscription with Green AVIC.<br>
                         Empowering women sustainably through eco-friendly innovation.
                     </p>
                     <p style="margin: 0;">
@@ -204,47 +232,56 @@ function render_newsletter_email(array $article, string $unsubscribeUrl): string
 }
 
 /**
- * Dispatch newsletter email campaign for a given article to all active subscribers.
- * 
- * Guarantees duplicate-send prevention using MariaDB unique index on (campaign_id, subscriber_id).
+ * Create campaign and queue all eligible confirmed ('active') subscribers.
+ * Prevents accidental duplicate campaigns if publish button is clicked multiple times.
  */
-function dispatch_newsletter_campaign(PDO $pdo, int $articleId, array $articleData): array {
+function create_newsletter_campaign(PDO $pdo, int $articleId, array $articleData): array {
     $mailer = new GreenAvicMailer();
-
     if (!$mailer->isConfigured()) {
         return [
             'attempted' => false,
-            'reason'    => 'SMTP credentials are not configured in cms-core/.env'
+            'reason'    => 'Hostinger SMTP credentials are not configured in cms-core/.env'
         ];
     }
 
-    // Set unlimited execution time for delivery loop
-    if (function_exists('set_time_limit')) {
-        @set_time_limit(0);
-    }
-    if (function_exists('ignore_user_abort')) {
-        @ignore_user_abort(true);
+    // 1. Debounce Check: Prevent duplicate campaign if triggered within last 60 seconds for same article
+    $recentStmt = $pdo->prepare("
+        SELECT id, status, total_subscribers, sent_count, failed_count, pending_count 
+        FROM newsletter_campaigns 
+        WHERE article_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+        ORDER BY id DESC LIMIT 1
+    ");
+    $recentStmt->execute([$articleId]);
+    $existingCampaign = $recentStmt->fetch();
+
+    if ($existingCampaign) {
+        // Campaign was already created seconds ago; proceed directly to process queue
+        $batchResult = process_campaign_queue($pdo, 15);
+        return [
+            'attempted'         => true,
+            'campaign_id'       => (int)$existingCampaign['id'],
+            'total_subscribers' => (int)$existingCampaign['total_subscribers'],
+            'batch_result'      => $batchResult,
+            'message'           => 'Campaign already in progress. Batch processed.'
+        ];
     }
 
     $subject = $articleData['title'] ?? 'Green AVIC News & Insights';
 
-    // 1. Create campaign record
-    $campStmt = $pdo->prepare("
-        INSERT INTO newsletter_campaigns (article_id, subject, status, total_subscribers, sent_count, failed_count, created_at)
-        VALUES (?, ?, 'sending', 0, 0, 0, NOW())
-    ");
-    $campStmt->execute([$articleId, $subject]);
-    $campaignId = (int)$pdo->lastInsertId();
-
-    // 2. Fetch all active subscribers
+    // 2. Fetch all CONFIRMED ('active') subscribers only (Double Opt-In enforcement)
     $subStmt = $pdo->prepare("SELECT id, email, token FROM subscribers WHERE status = 'active' ORDER BY id ASC");
     $subStmt->execute();
     $subscribers = $subStmt->fetchAll();
 
     $totalSubscribers = count($subscribers);
 
-    $updateTotalStmt = $pdo->prepare("UPDATE newsletter_campaigns SET total_subscribers = ? WHERE id = ?");
-    $updateTotalStmt->execute([$totalSubscribers, $campaignId]);
+    // 3. Create Campaign Record
+    $campStmt = $pdo->prepare("
+        INSERT INTO newsletter_campaigns (article_id, subject, status, total_subscribers, sent_count, failed_count, pending_count, created_at)
+        VALUES (?, ?, 'pending', ?, 0, 0, ?, NOW())
+    ");
+    $campStmt->execute([$articleId, $subject, $totalSubscribers, $totalSubscribers]);
+    $campaignId = (int)$pdo->lastInsertId();
 
     if ($totalSubscribers === 0) {
         $finishStmt = $pdo->prepare("UPDATE newsletter_campaigns SET status = 'sent', completed_at = NOW() WHERE id = ?");
@@ -255,73 +292,204 @@ function dispatch_newsletter_campaign(PDO $pdo, int $articleId, array $articleDa
             'total_subscribers' => 0,
             'sent_count'        => 0,
             'failed_count'      => 0,
-            'message'           => 'No active subscribers to send to.'
+            'pending_count'     => 0,
+            'message'           => 'No confirmed active subscribers to send to.'
         ];
     }
 
-    $sentCount = 0;
-    $failedCount = 0;
-
-    $recordDeliveryStmt = $pdo->prepare("
-        INSERT INTO newsletter_deliveries (campaign_id, subscriber_id, email, status, error_message, sent_at)
-        VALUES (?, ?, ?, ?, ?, NOW())
-        ON DUPLICATE KEY UPDATE status = VALUES(status), error_message = VALUES(error_message), sent_at = VALUES(sent_at)
-    ");
-
-    $checkDeliveryStmt = $pdo->prepare("
-        SELECT id, status FROM newsletter_deliveries WHERE campaign_id = ? AND subscriber_id = ? LIMIT 1
+    // 4. Populate Delivery Queue with status 'pending'
+    $queueStmt = $pdo->prepare("
+        INSERT INTO newsletter_deliveries (campaign_id, subscriber_id, email, status, attempts, created_at)
+        VALUES (?, ?, ?, 'pending', 0, NOW())
+        ON DUPLICATE KEY UPDATE id = id
     ");
 
     foreach ($subscribers as $sub) {
-        $subId = (int)$sub['id'];
-        $subEmail = $sub['email'];
-        $subToken = $sub['token'];
-
-        // Prevent duplicate sending if script was interrupted and resumed
-        $checkDeliveryStmt->execute([$campaignId, $subId]);
-        $existing = $checkDeliveryStmt->fetch();
-        if ($existing && $existing['status'] === 'sent') {
-            $sentCount++;
-            continue;
-        }
-
-        $unsubscribeUrl = NEWSLETTER_URL . '/unsubscribe?token=' . urlencode($subToken);
-        $htmlBody = render_newsletter_email($articleData, $unsubscribeUrl);
-
-        $result = $mailer->send($subEmail, $subject, $htmlBody, $unsubscribeUrl);
-
-        if ($result['success']) {
-            $sentCount++;
-            $recordDeliveryStmt->execute([$campaignId, $subId, $subEmail, 'sent', null]);
-        } else {
-            $failedCount++;
-            $recordDeliveryStmt->execute([$campaignId, $subId, $subEmail, 'failed', substr((string)$result['error'], 0, 490)]);
-        }
-
-        // Brief delay (50ms) to prevent slamming SMTP servers
-        usleep(50000);
+        $queueStmt->execute([$campaignId, (int)$sub['id'], $sub['email']]);
     }
 
-    $finalStatus = ($sentCount > 0 || $failedCount === 0) ? 'sent' : 'failed';
-    $finishStmt = $pdo->prepare("
-        UPDATE newsletter_campaigns 
-        SET status = ?, sent_count = ?, failed_count = ?, completed_at = NOW() 
-        WHERE id = ?
-    ");
-    $finishStmt->execute([$finalStatus, $sentCount, $failedCount, $campaignId]);
+    // 5. Process initial batch immediately up to available 24h quota
+    $batchResult = process_campaign_queue($pdo, 15);
 
     return [
         'attempted'         => true,
         'campaign_id'       => $campaignId,
         'total_subscribers' => $totalSubscribers,
-        'sent_count'        => $sentCount,
-        'failed_count'      => $failedCount,
-        'status'            => $finalStatus
+        'batch_result'      => $batchResult
     ];
 }
 
 /**
- * Retry failed deliveries for a specific campaign.
+ * Process next batch from campaign delivery queue, strictly respecting Hostinger's 100 emails / rolling 24h limit.
+ * Can be called via Cron or Admin trigger.
+ */
+function process_campaign_queue(PDO $pdo, int $batchLimit = 15): array {
+    $mailer = new GreenAvicMailer();
+    if (!$mailer->isConfigured()) {
+        return ['processed' => 0, 'error' => 'SMTP not configured in cms-core/.env'];
+    }
+
+    if (function_exists('set_time_limit')) {
+        @set_time_limit(60);
+    }
+
+    // 1. Check rolling 24-hour quota limit
+    $availableQuota = get_available_smtp_quota($pdo);
+    if ($availableQuota <= 0) {
+        return [
+            'processed'       => 0,
+            'quota_exhausted' => true,
+            'available_quota' => 0,
+            'message'         => 'Hostinger 100 emails / 24h rolling limit reached. Processing paused until quota window resets.'
+        ];
+    }
+
+    // 2. Determine actual batch limit
+    $batchSize = min($batchLimit, $availableQuota);
+
+    // 3. Find oldest unfinished campaign
+    $campStmt = $pdo->query("
+        SELECT id, article_id, subject, status 
+        FROM newsletter_campaigns 
+        WHERE status IN ('pending', 'sending') 
+        ORDER BY id ASC 
+        LIMIT 1
+    ");
+    $campaign = $campStmt->fetch();
+
+    if (!$campaign) {
+        return ['processed' => 0, 'message' => 'No pending campaigns in queue.'];
+    }
+
+    $campaignId = (int)$campaign['id'];
+
+    // Update campaign status to 'sending'
+    $pdo->prepare("UPDATE newsletter_campaigns SET status = 'sending' WHERE id = ? AND status = 'pending'")->execute([$campaignId]);
+
+    // 4. Fetch published article content
+    $artStmt = $pdo->prepare("SELECT * FROM articles WHERE id = ? LIMIT 1");
+    $artStmt->execute([$campaign['article_id']]);
+    $article = $artStmt->fetch();
+
+    if (!$article) {
+        // Fallback to latest live article
+        $artStmt = $pdo->query("SELECT * FROM articles WHERE status = 'published' ORDER BY published_at DESC LIMIT 1");
+        $article = $artStmt->fetch();
+    }
+
+    if (!$article) {
+        return ['processed' => 0, 'error' => 'Associated article content not found.'];
+    }
+
+    // 5. Fetch next batch of pending deliveries
+    $queueStmt = $pdo->prepare("
+        SELECT d.id as delivery_id, d.subscriber_id, d.email, d.attempts, s.token, s.status as subscriber_status
+        FROM newsletter_deliveries d
+        LEFT JOIN subscribers s ON d.subscriber_id = s.id
+        WHERE d.campaign_id = ? AND d.status = 'pending' AND d.attempts < 3
+        ORDER BY d.id ASC
+        LIMIT ?
+    ");
+    $queueStmt->bindValue(1, $campaignId, PDO::PARAM_INT);
+    $queueStmt->bindValue(2, $batchSize, PDO::PARAM_INT);
+    $queueStmt->execute();
+    $items = $queueStmt->fetchAll();
+
+    if (empty($items)) {
+        // No more pending items; finalize campaign status
+        finalize_campaign_status($pdo, $campaignId);
+        return ['processed' => 0, 'message' => 'Campaign queue complete.'];
+    }
+
+    $updateDeliveryStmt = $pdo->prepare("
+        UPDATE newsletter_deliveries 
+        SET status = ?, attempts = attempts + 1, error_message = ?, sent_at = ? 
+        WHERE id = ?
+    ");
+
+    $processedCount = 0;
+    $successCount   = 0;
+    $failureCount   = 0;
+    $subject        = $campaign['subject'];
+
+    foreach ($items as $item) {
+        $deliveryId = (int)$item['delivery_id'];
+        $email      = $item['email'];
+        $token      = $item['token'] ?? '';
+        $subStatus  = $item['subscriber_status'] ?? '';
+
+        // Exclude if recipient unsubscribed before batch was picked up
+        if ($subStatus !== 'active') {
+            $updateDeliveryStmt->execute(['failed', 'Subscriber is no longer active', null, $deliveryId]);
+            $failureCount++;
+            $processedCount++;
+            continue;
+        }
+
+        $unsubscribeUrl = NEWSLETTER_URL . '/unsubscribe?token=' . urlencode($token);
+        $htmlBody = render_newsletter_email($article, $unsubscribeUrl);
+
+        $result = $mailer->send($email, $subject, $htmlBody, $unsubscribeUrl);
+
+        if ($result['success']) {
+            $updateDeliveryStmt->execute(['sent', null, date('Y-m-d H:i:s'), $deliveryId]);
+            $successCount++;
+        } else {
+            $err = substr((string)($result['error'] ?? 'SMTP Error'), 0, 490);
+            $nextStatus = ($item['attempts'] >= 2) ? 'failed' : 'pending';
+            $updateDeliveryStmt->execute([$nextStatus, $err, null, $deliveryId]);
+            $failureCount++;
+        }
+
+        $processedCount++;
+        usleep(100000); // 100ms throttle between emails
+    }
+
+    // 6. Recalculate campaign totals
+    finalize_campaign_status($pdo, $campaignId);
+
+    return [
+        'processed'       => $processedCount,
+        'sent'            => $successCount,
+        'failed'          => $failureCount,
+        'available_quota' => get_available_smtp_quota($pdo),
+        'campaign_id'     => $campaignId
+    ];
+}
+
+/**
+ * Helper to recount deliveries and finalize campaign state
+ */
+function finalize_campaign_status(PDO $pdo, int $campaignId): void {
+    $countsStmt = $pdo->prepare("
+        SELECT 
+            SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent_cnt,
+            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_cnt,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_cnt
+        FROM newsletter_deliveries 
+        WHERE campaign_id = ?
+    ");
+    $countsStmt->execute([$campaignId]);
+    $counts = $countsStmt->fetch();
+
+    $sent    = (int)($counts['sent_cnt'] ?? 0);
+    $failed  = (int)($counts['failed_cnt'] ?? 0);
+    $pending = (int)($counts['pending_cnt'] ?? 0);
+
+    $isDone = ($pending === 0);
+    $finalStatus = $isDone ? ($sent > 0 ? 'sent' : 'failed') : 'sending';
+
+    $upStmt = $pdo->prepare("
+        UPDATE newsletter_campaigns 
+        SET sent_count = ?, failed_count = ?, pending_count = ?, status = ?, completed_at = ?
+        WHERE id = ?
+    ");
+    $completedAt = $isDone ? date('Y-m-d H:i:s') : null;
+    $upStmt->execute([$sent, $failed, $pending, $finalStatus, $completedAt, $campaignId]);
+}
+
+/**
+ * Retry failed deliveries for a specific campaign
  */
 function retry_failed_campaign_deliveries(PDO $pdo, int $campaignId): array {
     $mailer = new GreenAvicMailer();
@@ -329,82 +497,34 @@ function retry_failed_campaign_deliveries(PDO $pdo, int $campaignId): array {
         return ['success' => false, 'error' => 'SMTP credentials not configured in cms-core/.env'];
     }
 
-    if (function_exists('set_time_limit')) {
-        @set_time_limit(0);
-    }
-
-    $campStmt = $pdo->prepare("SELECT * FROM newsletter_campaigns WHERE id = ? LIMIT 1");
-    $campStmt->execute([$campaignId]);
-    $campaign = $campStmt->fetch();
-    if (!$campaign) {
-        return ['success' => false, 'error' => 'Campaign record not found.'];
-    }
-
-    // Fetch published article
-    $artStmt = $pdo->prepare("SELECT * FROM articles WHERE id = ? LIMIT 1");
-    $artStmt->execute([$campaign['article_id']]);
-    $article = $artStmt->fetch();
-    if (!$article) {
-        // Fallback to latest published article
-        $artStmt = $pdo->query("SELECT * FROM articles WHERE status = 'published' ORDER BY published_at DESC LIMIT 1");
-        $article = $artStmt->fetch();
-    }
-    if (!$article) {
-        return ['success' => false, 'error' => 'Associated article content not found.'];
-    }
-
-    $failStmt = $pdo->prepare("
-        SELECT d.id as delivery_id, d.subscriber_id, s.email, s.token, s.status as sub_status
-        FROM newsletter_deliveries d
+    // Reset failed deliveries where subscriber is still active back to 'pending'
+    $resetStmt = $pdo->prepare("
+        UPDATE newsletter_deliveries d
         JOIN subscribers s ON d.subscriber_id = s.id
+        SET d.status = 'pending', d.attempts = 0, d.error_message = NULL
         WHERE d.campaign_id = ? AND d.status = 'failed' AND s.status = 'active'
     ");
-    $failStmt->execute([$campaignId]);
-    $failedList = $failStmt->fetchAll();
+    $resetStmt->execute([$campaignId]);
+    $resetCount = $resetStmt->rowCount();
 
-    if (empty($failedList)) {
-        return ['success' => true, 'retried_success' => 0, 'still_failed' => 0, 'message' => 'No eligible failed deliveries to retry.'];
+    if ($resetCount === 0) {
+        return ['success' => true, 'reset_count' => 0, 'message' => 'No eligible failed deliveries to retry.'];
     }
 
-    $subject = $campaign['subject'];
-    $retriedSuccess = 0;
-    $stillFailed = 0;
-
-    $updateDeliveryStmt = $pdo->prepare("
-        UPDATE newsletter_deliveries 
-        SET status = ?, error_message = ?, sent_at = NOW() 
+    // Update campaign status back to sending
+    $pdo->prepare("
+        UPDATE newsletter_campaigns 
+        SET status = 'sending', completed_at = NULL 
         WHERE id = ?
-    ");
+    ")->execute([$campaignId]);
 
-    foreach ($failedList as $row) {
-        $unsubscribeUrl = NEWSLETTER_URL . '/unsubscribe?token=' . urlencode($row['token']);
-        $htmlBody = render_newsletter_email($article, $unsubscribeUrl);
-
-        $result = $mailer->send($row['email'], $subject, $htmlBody, $unsubscribeUrl);
-        if ($result['success']) {
-            $retriedSuccess++;
-            $updateDeliveryStmt->execute(['sent', null, $row['delivery_id']]);
-        } else {
-            $stillFailed++;
-            $updateDeliveryStmt->execute(['failed', substr((string)$result['error'], 0, 490), $row['delivery_id']]);
-        }
-        usleep(50000);
-    }
-
-    // Update campaign counters
-    $recountStmt = $pdo->prepare("
-        UPDATE newsletter_campaigns
-        SET sent_count = (SELECT COUNT(*) FROM newsletter_deliveries WHERE campaign_id = ? AND status = 'sent'),
-            failed_count = (SELECT COUNT(*) FROM newsletter_deliveries WHERE campaign_id = ? AND status = 'failed')
-        WHERE id = ?
-    ");
-    $recountStmt->execute([$campaignId, $campaignId, $campaignId]);
+    // Process next available batch immediately
+    $batch = process_campaign_queue($pdo, 15);
 
     return [
-        'success'         => true,
-        'retried_success' => $retriedSuccess,
-        'still_failed'    => $stillFailed,
-        'message'         => "Retry complete: {$retriedSuccess} succeeded, {$stillFailed} failed."
+        'success'      => true,
+        'reset_count'  => $resetCount,
+        'batch_result' => $batch,
+        'message'      => "{$resetCount} failed deliveries reset to queue."
     ];
 }
-

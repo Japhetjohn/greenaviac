@@ -521,45 +521,72 @@
             </header>
             <div class="modal-body" style="padding: 24px;">
                 <!-- Summary Metrics Grid -->
-                <div class="subscriber-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
-                    <div class="stat-box" style="background: #F4FBF4; border: 1px solid #C8DEC8; border-radius: 10px; padding: 14px 18px;">
-                        <div style="font-size: 12px; font-weight: 600; color: #2E7D32; text-transform: uppercase;">Active Audience</div>
-                        <div id="statActiveSubscribers" style="font-size: 26px; font-weight: 700; color: #0D3D2F; margin-top: 4px;">0</div>
-                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Eligible for broadcasts</div>
+                <div class="subscriber-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <div class="stat-box" style="background: #F4FBF4; border: 1px solid #C8DEC8; border-radius: 10px; padding: 14px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #2E7D32; text-transform: uppercase;">Confirmed Active</div>
+                        <div id="statActiveSubscribers" style="font-size: 24px; font-weight: 700; color: #0D3D2F; margin-top: 4px;">0</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Receives broadcasts</div>
                     </div>
-                    <div class="stat-box" style="background: #FFFBF4; border: 1px solid #FFE0B2; border-radius: 10px; padding: 14px 18px;">
-                        <div style="font-size: 12px; font-weight: 600; color: #E65100; text-transform: uppercase;">Unsubscribed</div>
-                        <div id="statUnsubscribed" style="font-size: 26px; font-weight: 700; color: #E65100; margin-top: 4px;">0</div>
-                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Suppressed contacts</div>
+                    <div class="stat-box" style="background: #F0F7FF; border: 1px solid #BBDEFB; border-radius: 10px; padding: 14px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #1565C0; text-transform: uppercase;">Awaiting Confirmation</div>
+                        <div id="statPendingSubscribers" style="font-size: 24px; font-weight: 700; color: #1565C0; margin-top: 4px;">0</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Verification link sent</div>
                     </div>
-                    <div class="stat-box" style="background: #F8FAF9; border: 1px solid #E2E8E2; border-radius: 10px; padding: 14px 18px;">
-                        <div style="font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase;">SMTP Status</div>
-                        <div id="statSmtpStatus" style="font-size: 15px; font-weight: 700; color: #0D3D2F; margin-top: 8px;">Checking...</div>
-                        <div id="statSmtpDesc" style="font-size: 11px; color: #666; margin-top: 2px;">Hostinger Mail</div>
+                    <div class="stat-box" style="background: #FFFBF4; border: 1px solid #FFE0B2; border-radius: 10px; padding: 14px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #E65100; text-transform: uppercase;">Unsubscribed</div>
+                        <div id="statUnsubscribed" style="font-size: 24px; font-weight: 700; color: #E65100; margin-top: 4px;">0</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Suppressed</div>
+                    </div>
+                    <div class="stat-box" style="background: #F8FAF9; border: 1px solid #E2E8E2; border-radius: 10px; padding: 14px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Hostinger 24h Quota</div>
+                        <div id="statQuotaUsed" style="font-size: 18px; font-weight: 700; color: #0D3D2F; margin-top: 6px;">0 / 100 used</div>
+                        <div id="statQuotaAvail" style="font-size: 11px; color: #2E7D32; margin-top: 2px;">100 available</div>
                     </div>
                 </div>
 
                 <!-- Latest Campaign Broadcast Status Card -->
-                <div id="campaignCard" style="background: #ffffff; border: 1px solid #E2E8E2; border-radius: 10px; padding: 18px; margin-bottom: 24px;">
+                <div id="campaignCard" style="background: #ffffff; border: 1px solid #E2E8E2; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h4 style="color: #0D3D2F; font-size: 15px; margin: 0;">Latest Email Broadcast</h4>
+                        <h4 style="color: #0D3D2F; font-size: 15px; margin: 0;">Latest Email Campaign</h4>
                         <span id="campaignStatusBadge" class="status-badge" style="font-size: 11px;">Checking...</span>
                     </div>
                     <div id="campaignDetails" style="font-size: 13px; color: #555; line-height: 1.6;">
-                        <p>When you publish an article, it will automatically broadcast to all active subscribers.</p>
+                        <p>When you publish an article, it will automatically broadcast to confirmed subscribers.</p>
                     </div>
-                    <div id="campaignRetryContainer" style="margin-top: 12px; display: none;">
-                        <button type="button" id="btnRetryCampaign" class="btn btn-outline btn-sm">
+                    <div id="campaignActionsContainer" style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" id="btnProcessBatch" class="btn btn-primary btn-sm" style="display: none;">
+                            Process Next Batch Now
+                        </button>
+                        <button type="button" id="btnRetryCampaign" class="btn btn-outline btn-sm" style="display: none;">
                             Retry Failed Deliveries
                         </button>
                     </div>
                 </div>
 
+                <!-- Hostinger Background Automation & Cron Helper -->
+                <details style="background: #F8FAF9; border: 1px solid #E2E8E2; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
+                    <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #0D3D2F; display: flex; justify-content: space-between; align-items: center;">
+                        <span>⚙️ Hostinger Background Automation (Cron Job)</span>
+                        <span id="cronStatusPill" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #EEE; color: #666;">Checking cron...</span>
+                    </summary>
+                    <div style="margin-top: 12px; font-size: 12px; color: #555; line-height: 1.6;">
+                        <p style="margin-bottom: 8px;">
+                            Hostinger Single Web Hosting enforces a rolling limit of <strong>100 emails per 24 hours</strong>. If your subscriber list exceeds the remaining quota, the queue automatically resumes via Hostinger hPanel Cron:
+                        </p>
+                        <div style="background: #FFF; border: 1px solid #DDD; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; margin-bottom: 8px; word-break: break-all;" id="cronCommandText">
+                            wget -q -O - "https://admin.greenavic.org/api/cron.php?secret=greenavic_cron_sec_8f7b2a9e3d4c1" >/dev/null 2>&1
+                        </div>
+                        <p style="margin: 0; color: #777;">
+                            In hPanel &rarr; <strong>Advanced &rarr; Cron Jobs</strong>, choose <strong>Hourly (0 * * * *)</strong> and paste the command above.
+                        </p>
+                    </div>
+                </details>
+
                 <!-- Manual Add & Test Controls -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <h4 style="color: #0D3D2F; font-size: 15px; margin: 0;">Subscriber Roster</h4>
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" id="btnTestSmtp" class="btn btn-outline btn-sm" title="Send a test email to verify credentials">Test SMTP</button>
+                        <button type="button" id="btnTestSmtp" class="btn btn-outline btn-sm" title="Send a test email via PHPMailer to verify credentials">Send Test Email</button>
                     </div>
                 </div>
 
