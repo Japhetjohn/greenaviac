@@ -18,6 +18,9 @@ if ($method === 'GET') {
     try {
         $pubStmt = $pdo->query("SELECT * FROM articles WHERE status = 'published' ORDER BY published_at DESC LIMIT 1");
         $published = $pubStmt->fetch() ?: null;
+        if ($published) {
+            $published['cover_image'] = normalize_image_url($published['cover_image'] ?? null);
+        }
 
         $draftStmt = $pdo->query("SELECT * FROM drafts WHERE id = 1 LIMIT 1");
         $draftRow = $draftStmt->fetch() ?: null;
@@ -26,6 +29,9 @@ if ($method === 'GET') {
         $draft = null;
         if ($draftRow && (!empty($draftRow['title']) || !empty($draftRow['body']))) {
             $draft = $draftRow;
+            if (!empty($draft['cover_image'])) {
+                $draft['cover_image'] = normalize_image_url($draft['cover_image']);
+            }
         }
 
         json_response([
@@ -33,7 +39,7 @@ if ($method === 'GET') {
             'draft'     => $draft
         ]);
     } catch (Exception $e) {
-        error_log("Admin article fetch error: " . $e->getMessage());
+        AppLogger::error('article', 'Admin article fetch error: ' . $e->getMessage());
         json_response(['error' => 'Unable to retrieve publication records.'], 500);
     }
 }

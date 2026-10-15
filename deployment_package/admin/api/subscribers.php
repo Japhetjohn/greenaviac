@@ -280,11 +280,13 @@ if ($method === 'POST') {
 
         $sendResult = $mailer->send($targetEmail, $testSubject, $testBody);
         if ($sendResult['success']) {
+            AppLogger::info('smtp', 'SMTP connection test succeeded', ['target' => $targetEmail]);
             json_response([
                 'success' => true,
                 'message' => "Test email successfully sent to {$targetEmail}!"
             ]);
         } else {
+            AppLogger::error('smtp', 'SMTP connection test failed: ' . ($sendResult['error'] ?? 'Unknown error'), ['target' => $targetEmail]);
             json_response([
                 'error' => "SMTP Test Failed: " . ($sendResult['error'] ?? 'Unknown error')
             ], 500);

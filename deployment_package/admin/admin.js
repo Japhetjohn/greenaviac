@@ -848,6 +848,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const btnRefreshAdmins = document.getElementById('btnRefreshAdmins');
+
     if (btnManageAdmins && adminsModal) {
         btnManageAdmins.addEventListener('click', () => {
             adminsModal.style.display = 'flex';
@@ -860,6 +862,25 @@ document.addEventListener('DOMContentLoaded', () => {
             adminsModal.style.display = 'flex';
             loadAdminsList();
         });
+        overviewAdminBadge.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                overviewAdminBadge.click();
+            }
+        });
+    }
+
+    if (overviewAudienceBadge && subscribersModal) {
+        overviewAudienceBadge.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                overviewAudienceBadge.click();
+            }
+        });
+    }
+
+    if (btnRefreshAdmins) {
+        btnRefreshAdmins.addEventListener('click', () => loadAdminsList());
     }
 
     const closeAdmins = () => { if (adminsModal) adminsModal.style.display = 'none'; };
@@ -910,6 +931,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (formAddAdminDirect) {
         formAddAdminDirect.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const nameEl = document.getElementById('newAdminName');
+            const roleEl = document.getElementById('newAdminRole');
+            const name = nameEl ? nameEl.value.trim() : '';
+            const role = roleEl ? roleEl.value : 'admin';
             const email = document.getElementById('newAdminEmail').value.trim();
             const password = document.getElementById('newAdminPassword').value;
 
@@ -917,7 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch('api/auth.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                    body: JSON.stringify({ action: 'add_admin', email, password, csrf_token: csrfToken })
+                    body: JSON.stringify({ action: 'add_admin', name, role, email, password, csrf_token: csrfToken })
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
@@ -935,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadAdminsList() {
         if (!adminsListContainer) return;
-        adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888;">Loading active administrators...</p>';
+        adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888; padding: 16px;">Loading active administrators...</p>';
 
         try {
             const res = await fetch('api/auth.php?action=list_admins', { 
@@ -946,7 +971,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                adminsListContainer.innerHTML = `<p style="font-size: 13px; color: #C62828;">${escapeHtml(errData.error || 'Failed to load administrators (HTTP ' + res.status + ')')}</p>`;
+                adminsListContainer.innerHTML = `
+                    <div style="padding: 16px; color: #C62828; text-align: center;">
+                        <p style="font-size: 13px; margin-bottom: 8px;">${escapeHtml(errData.error || 'Failed to load administrators (HTTP ' + res.status + ')')}</p>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="loadAdminsList()">Retry</button>
+                    </div>`;
                 return;
             }
 
@@ -958,35 +987,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (modalAdminsCount) modalAdminsCount.textContent = count;
 
                 if (count === 0) {
-                    adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888;">No administrators found.</p>';
+                    adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888; padding: 16px; text-align: center;">No administrators found.</p>';
                     return;
                 }
 
-                let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                let html = `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                        <thead style="background: #F8FAF9; border-bottom: 1px solid #EAEAEA;">
+                            <tr>
+                                <th style="padding: 10px 14px; color: #555;">Name &amp; Email</th>
+                                <th style="padding: 10px 14px; color: #555;">Role</th>
+                                <th style="padding: 10px 14px; color: #555;">Status</th>
+                                <th style="padding: 10px 14px; color: #555;">Joined</th>
+                                <th style="padding: 10px 14px; color: #555; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
                 data.admins.forEach(admin => {
-                    const currentEmail = (adminEmailDisplay ? adminEmailDisplay.textContent.trim() : '');
-                    const isSelf = admin.email.toLowerCase() === currentEmail.toLowerCase();
-                    const joined = admin.created_at ? new Date(admin.created_at).toLocaleDateString() : '';
+                    const isCurrent = admin.is_current;
+                    const joined = admin.created_at ? new Date(admin.created_at).toLocaleDateString() : 'Active';
+                    const isPending = (admin.status === 'Pending Setup');
+                    const statusBadgeStyle = isPending
+                        ? 'background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082;'
+                        : 'background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9;';
+                    
                     html += `
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 8px;">
-                            <div>
-                                <div style="font-weight: 600; font-size: 13.5px; color: #1B382B;">${escapeHtml(admin.email)} ${isSelf ? '<span style="font-size: 11px; background: #E8F5E9; color: #2E7D32; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">You</span>' : ''}</div>
-                                <div style="font-size: 11.5px; color: #777;">Active Admin &bull; Added ${joined}</div>
-                            </div>
-                            ${!isSelf ? `
-                                <button type="button" class="btn btn-outline" onclick="deleteAdminUser(${admin.id}, '${escapeHtml(admin.email)}')" style="padding: 4px 10px; font-size: 12px; color: #C62828; border-color: #FFCDD2;">Remove</button>
-                            ` : ''}
-                        </div>
+                        <tr style="border-bottom: 1px solid #F0F0F0;">
+                            <td style="padding: 12px 14px;">
+                                <div style="font-weight: 600; color: #1B382B;">${escapeHtml(admin.name || 'Administrator')}</div>
+                                <div style="font-size: 12px; color: #666;">${escapeHtml(admin.email)}</div>
+                            </td>
+                            <td style="padding: 12px 14px;">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #444; background: #EEE; padding: 2px 6px; border-radius: 4px;">
+                                    ${escapeHtml(admin.role || 'admin')}
+                                </span>
+                            </td>
+                            <td style="padding: 12px 14px;">
+                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px; display: inline-block; ${statusBadgeStyle}">
+                                    ${escapeHtml(admin.status || 'Active')}
+                                </span>
+                            </td>
+                            <td style="padding: 12px 14px; color: #666; font-size: 12px;">
+                                ${joined}
+                            </td>
+                            <td style="padding: 12px 14px; text-align: right;">
+                                ${isCurrent ? `
+                                    <span style="font-size: 11px; background: #E8F5E9; color: #2E7D32; padding: 3px 8px; border-radius: 4px; font-weight: 600;">You</span>
+                                ` : `
+                                    <button type="button" class="btn btn-outline" onclick="deleteAdminUser(${admin.id}, '${escapeHtml(admin.email)}')" style="padding: 4px 10px; font-size: 11px; color: #C62828; border-color: #FFCDD2;">Remove</button>
+                                `}
+                            </td>
+                        </tr>
                     `;
                 });
-                html += '</div>';
+                html += `</tbody></table>`;
                 adminsListContainer.innerHTML = html;
             } else {
-                adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #C62828;">Failed to load administrators.</p>';
+                adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #C62828; padding: 16px;">Failed to load administrators.</p>';
             }
         } catch (e) {
             console.error('Admins load error:', e);
-            adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #C62828;">Connection error loading administrators. Please retry.</p>';
+            adminsListContainer.innerHTML = `
+                <div style="padding: 16px; color: #C62828; text-align: center;">
+                    <p style="font-size: 13px; margin-bottom: 8px;">Network error loading administrators.</p>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="loadAdminsList()">Retry</button>
+                </div>`;
         }
     }
 
@@ -1405,11 +1471,243 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ----------------------------------------------------
+    // System Health & Diagnostic Logs Modal Handling
+    // ----------------------------------------------------
+    const btnHealthLogs = document.getElementById('btnHealthLogs');
+    const healthLogsModal = document.getElementById('healthLogsModal');
+    const btnCloseHealthLogsModal = document.getElementById('btnCloseHealthLogsModal');
+    const btnCloseHealthLogsModalBottom = document.getElementById('btnCloseHealthLogsModalBottom');
+    const tabBtnHealth = document.getElementById('tabBtnHealth');
+    const tabBtnLogs = document.getElementById('tabBtnLogs');
+    const tabContentHealth = document.getElementById('tabContentHealth');
+    const tabContentLogs = document.getElementById('tabContentLogs');
+    const btnRefreshHealth = document.getElementById('btnRefreshHealth');
+    const btnFilterLogs = document.getElementById('btnFilterLogs');
+    const logLevelFilter = document.getElementById('logLevelFilter');
+    const logSearchInput = document.getElementById('logSearchInput');
+    const logsTableBody = document.getElementById('logsTableBody');
+
+    // Health UI elements
+    const healthDbBadge = document.getElementById('healthDbBadge');
+    const healthDbName = document.getElementById('healthDbName');
+    const healthDbLatency = document.getElementById('healthDbLatency');
+    const healthDbSchema = document.getElementById('healthDbSchema');
+    const healthSmtpBadge = document.getElementById('healthSmtpBadge');
+    const healthSmtpConfigured = document.getElementById('healthSmtpConfigured');
+    const healthSmtpTested = document.getElementById('healthSmtpTested');
+    const healthSmtpVerified = document.getElementById('healthSmtpVerified');
+    const healthQueueBadge = document.getElementById('healthQueueBadge');
+    const healthActiveSubs = document.getElementById('healthActiveSubs');
+    const healthPendingDeliv = document.getElementById('healthPendingDeliv');
+    const healthFailedDeliv = document.getElementById('healthFailedDeliv');
+    const healthRuntimeBadge = document.getElementById('healthRuntimeBadge');
+    const healthMemory = document.getElementById('healthMemory');
+    const healthDisk = document.getElementById('healthDisk');
+    const healthServerTime = document.getElementById('healthServerTime');
+
+    if (btnHealthLogs && healthLogsModal) {
+        btnHealthLogs.addEventListener('click', () => {
+            healthLogsModal.style.display = 'flex';
+            loadSystemHealth();
+            loadSystemLogs();
+        });
+    }
+
+    const closeHealthLogs = () => { if (healthLogsModal) healthLogsModal.style.display = 'none'; };
+    if (btnCloseHealthLogsModal) btnCloseHealthLogsModal.addEventListener('click', closeHealthLogs);
+    if (btnCloseHealthLogsModalBottom) btnCloseHealthLogsModalBottom.addEventListener('click', closeHealthLogs);
+
+    if (tabBtnHealth && tabBtnLogs && tabContentHealth && tabContentLogs) {
+        tabBtnHealth.addEventListener('click', () => {
+            tabBtnHealth.style.borderBottomColor = '#2E7D32';
+            tabBtnHealth.style.color = '#2E7D32';
+            tabBtnLogs.style.borderBottomColor = 'transparent';
+            tabBtnLogs.style.color = '#666';
+            tabContentHealth.style.display = 'block';
+            tabContentLogs.style.display = 'none';
+        });
+
+        tabBtnLogs.addEventListener('click', () => {
+            tabBtnLogs.style.borderBottomColor = '#2E7D32';
+            tabBtnLogs.style.color = '#2E7D32';
+            tabBtnHealth.style.borderBottomColor = 'transparent';
+            tabBtnHealth.style.color = '#666';
+            tabContentLogs.style.display = 'block';
+            tabContentHealth.style.display = 'none';
+            loadSystemLogs();
+        });
+    }
+
+    if (btnRefreshHealth) {
+        btnRefreshHealth.addEventListener('click', () => loadSystemHealth());
+    }
+
+    if (btnFilterLogs) {
+        btnFilterLogs.addEventListener('click', () => loadSystemLogs());
+    }
+
+    if (logLevelFilter) {
+        logLevelFilter.addEventListener('change', () => loadSystemLogs());
+    }
+
+    if (logSearchInput) {
+        logSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loadSystemLogs();
+            }
+        });
+    }
+
+    async function loadSystemHealth() {
+        if (!healthDbBadge) return;
+        healthDbBadge.textContent = 'Checking...';
+        healthSmtpBadge.textContent = 'Checking...';
+
+        try {
+            const res = await fetch('api/health.php', {
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                healthDbBadge.textContent = 'Degraded';
+                healthDbBadge.className = 'status-badge empty';
+                healthSmtpBadge.textContent = 'Unavailable';
+                healthSmtpBadge.className = 'status-badge empty';
+                return;
+            }
+
+            const data = await res.json();
+            // Database
+            if (data.database && data.database.connected) {
+                healthDbBadge.textContent = 'Operational';
+                healthDbBadge.className = 'status-badge published';
+                if (healthDbName) healthDbName.textContent = data.database.name || '-';
+                if (healthDbLatency) healthDbLatency.textContent = data.database.latency_ms || '< 1';
+                if (healthDbSchema) healthDbSchema.textContent = 'v2.1';
+            } else {
+                healthDbBadge.textContent = 'Offline';
+                healthDbBadge.className = 'status-badge empty';
+            }
+
+            // SMTP Gateway
+            if (data.smtp) {
+                const conf = data.smtp.configured;
+                const tested = data.smtp.tested;
+                const verified = data.smtp.delivery_verified;
+
+                if (healthSmtpConfigured) {
+                    healthSmtpConfigured.textContent = conf ? 'Yes (smtp.hostinger.com)' : 'Missing Password';
+                    healthSmtpConfigured.style.color = conf ? '#2E7D32' : '#C62828';
+                }
+                if (healthSmtpTested) {
+                    healthSmtpTested.textContent = tested ? 'Socket Connected (Port 465 SSL)' : (conf ? 'Failed (' + (data.smtp.test_error || 'Timeout') + ')' : 'Not Configured');
+                    healthSmtpTested.style.color = tested ? '#2E7D32' : '#C62828';
+                }
+                if (healthSmtpVerified) {
+                    healthSmtpVerified.textContent = verified ? 'Verified (' + data.smtp.total_sent_emails + ' delivered)' : 'No live emails delivered yet';
+                    healthSmtpVerified.style.color = verified ? '#2E7D32' : '#E65100';
+                }
+
+                if (conf && tested) {
+                    healthSmtpBadge.textContent = verified ? 'Verified & Active' : 'Ready to Send';
+                    healthSmtpBadge.className = 'status-badge published';
+                } else {
+                    healthSmtpBadge.textContent = 'Attention Needed';
+                    healthSmtpBadge.className = 'status-badge empty';
+                }
+            }
+
+            // Queue
+            if (data.queue) {
+                if (healthActiveSubs) healthActiveSubs.textContent = data.queue.active_subscribers || 0;
+                if (healthPendingDeliv) healthPendingDeliv.textContent = data.queue.pending_deliveries || 0;
+                if (healthFailedDeliv) healthFailedDeliv.textContent = data.queue.failed_deliveries || 0;
+            }
+
+            // Server runtime
+            if (data.server) {
+                if (healthRuntimeBadge) healthRuntimeBadge.textContent = 'PHP ' + (data.server.php_version ? data.server.php_version.split('-')[0] : '8.3');
+                if (healthMemory) healthMemory.textContent = data.server.memory_usage + ' / ' + data.server.memory_limit;
+                if (healthDisk) healthDisk.textContent = data.server.disk.free_gb + ' GB free';
+                if (healthServerTime) healthServerTime.textContent = data.server.server_time || '-';
+            }
+        } catch (e) {
+            console.error('Health diagnostics error:', e);
+            if (healthDbBadge) {
+                healthDbBadge.textContent = 'Connection Error';
+                healthDbBadge.className = 'status-badge empty';
+            }
+        }
+    }
+
+    async function loadSystemLogs() {
+        if (!logsTableBody) return;
+        logsTableBody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #888;">Loading logs...</td></tr>';
+
+        const level = logLevelFilter ? logLevelFilter.value : 'all';
+        const search = logSearchInput ? encodeURIComponent(logSearchInput.value.trim()) : '';
+
+        try {
+            const url = `api/logs.php?action=logs&level=${level}&search=${search}&limit=50`;
+            const res = await fetch(url, {
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!res.ok) {
+                logsTableBody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #C62828;">Failed to load system logs.</td></tr>';
+                return;
+            }
+
+            const data = await res.json();
+            if (data && Array.isArray(data.logs)) {
+                if (data.logs.length === 0) {
+                    logsTableBody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #888;">No log entries found matching criteria.</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                data.logs.forEach(log => {
+                    const lvl = (log.level || 'info').toLowerCase();
+                    let lvlBadge = '<span style="font-size: 10px; font-weight: 700; background: #E8F5E9; color: #2E7D32; padding: 2px 6px; border-radius: 4px;">INFO</span>';
+                    if (lvl === 'error') {
+                        lvlBadge = '<span style="font-size: 10px; font-weight: 700; background: #FFEBEE; color: #C62828; padding: 2px 6px; border-radius: 4px;">ERROR</span>';
+                    } else if (lvl === 'warning') {
+                        lvlBadge = '<span style="font-size: 10px; font-weight: 700; background: #FFF8E1; color: #E65100; padding: 2px 6px; border-radius: 4px;">WARN</span>';
+                    }
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #F0F0F0;">
+                            <td style="padding: 8px 10px; color: #777; white-space: nowrap;">${escapeHtml(log.created_at)}</td>
+                            <td style="padding: 8px 10px;">${lvlBadge}</td>
+                            <td style="padding: 8px 10px; font-weight: 600; color: #1B382B;">${escapeHtml(log.channel || 'app')}</td>
+                            <td style="padding: 8px 10px; color: #333; word-break: break-word;">${escapeHtml(log.message)}</td>
+                            <td style="padding: 8px 10px; color: #888; font-family: monospace;">${escapeHtml(log.ip_address || '-')}</td>
+                        </tr>
+                    `;
+                });
+                logsTableBody.innerHTML = html;
+            } else {
+                logsTableBody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #C62828;">Invalid logs response received.</td></tr>';
+            }
+        } catch (e) {
+            console.error('Error loading logs:', e);
+            logsTableBody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #C62828;">Network error fetching system logs.</td></tr>';
+        }
+    }
+
     window.addEventListener('click', (e) => {
         if (e.target === previewModal) previewModal.style.display = 'none';
         if (e.target === confirmModal) confirmModal.style.display = 'none';
         if (adminsModal && e.target === adminsModal) adminsModal.style.display = 'none';
         if (subscribersModal && e.target === subscribersModal) subscribersModal.style.display = 'none';
+        if (healthLogsModal && e.target === healthLogsModal) healthLogsModal.style.display = 'none';
     });
 
     verifyAuth();

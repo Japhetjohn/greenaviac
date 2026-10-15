@@ -14,7 +14,7 @@
 
     # Protect data directory and sensitive file extensions
     RewriteRule ^data/ - [F,L]
-    <FilesMatch "(?i)\.(json|bak|tmp|lock|config|env|env\..*)$">
+    <FilesMatch "(?i)\.(sql|json|bak|tmp|lock|config|env|env\..*)$">
         Require all denied
     </FilesMatch>
 

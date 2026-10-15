@@ -308,6 +308,12 @@ function create_newsletter_campaign(PDO $pdo, int $articleId, array $articleData
         $queueStmt->execute([$campaignId, (int)$sub['id'], $sub['email']]);
     }
 
+    AppLogger::info('campaign', 'Newsletter campaign created and queued', [
+        'campaign_id'       => $campaignId,
+        'article_id'        => $articleId,
+        'total_subscribers' => $totalSubscribers
+    ]);
+
     // 5. Process initial batch immediately up to available 24h quota
     $batchResult = process_campaign_queue($pdo, 15);
 

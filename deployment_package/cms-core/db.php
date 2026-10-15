@@ -54,10 +54,10 @@ function ensure_tables_exist(PDO $pdo): bool {
     }
 
     try {
-        // Fast-path: Check if already verified in current database
+        // Fast-path: Check if already verified in current database at version 2.1
         try {
             $verStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'schema_version' LIMIT 1");
-            if ($verStmt && in_array($verStmt->fetchColumn(), ['1.1', '2.0'], true)) {
+            if ($verStmt && $verStmt->fetchColumn() === '2.1') {
                 $initialized = true;
                 return true;
             }
@@ -72,135 +72,133 @@ function ensure_tables_exist(PDO $pdo): bool {
             if (file_exists($schemaFile)) {
                 $sql = file_get_contents($schemaFile);
                 $pdo->exec($sql);
-                $initialized = true;
-                return true;
             }
         }
 
-        // 2. Check and migrate newsletter subscription tables if upgrading an existing installation
-        $checkSubscribers = $pdo->query("SHOW TABLES LIKE 'subscribers'");
-        if ($checkSubscribers->rowCount() === 0) {
-            $pdo->exec("
-                CREATE TABLE IF NOT EXISTS `subscribers` (
-                  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                  `email` VARCHAR(191) NOT NULL,
-                  `status` ENUM('pending', 'active', 'unsubscribed') NOT NULL DEFAULT 'pending',
-                  `token` VARCHAR(64) NOT NULL,
-                  `ip_address` VARCHAR(45) DEFAULT NULL,
-                  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  `confirmed_at` DATETIME DEFAULT NULL,
-                  `unsubscribed_at` DATETIME DEFAULT NULL,
-                  PRIMARY KEY (`id`),
-                  UNIQUE KEY `uk_subscribers_email` (`email`),
-                  KEY `idx_subscribers_status` (`status`),
-                  KEY `idx_subscribers_token` (`token`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        // 2. Ensure system_settings table exists
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `system_settings` (
+              `setting_key` VARCHAR(64) NOT NULL,
+              `setting_value` TEXT DEFAULT NULL,
+              `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (`setting_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-                CREATE TABLE IF NOT EXISTS `newsletter_campaigns` (
-                  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                  `article_id` INT UNSIGNED NOT NULL,
-                  `subject` VARCHAR(255) NOT NULL,
-                  `status` ENUM('pending', 'sending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
-                  `total_subscribers` INT UNSIGNED NOT NULL DEFAULT 0,
-                  `sent_count` INT UNSIGNED NOT NULL DEFAULT 0,
-                  `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
-                  `pending_count` INT UNSIGNED NOT NULL DEFAULT 0,
-                  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  `completed_at` DATETIME DEFAULT NULL,
-                  PRIMARY KEY (`id`),
-                  KEY `idx_campaigns_article` (`article_id`),
-                  KEY `idx_campaigns_status` (`status`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) 
+            VALUES ('cron_secret', 'greenavic_cron_sec_8f7b2a9e3d4c1');
+        ");
 
-                CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
-                  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                  `campaign_id` INT UNSIGNED NOT NULL,
-                  `subscriber_id` INT UNSIGNED NOT NULL,
-                  `email` VARCHAR(191) NOT NULL,
-                  `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
-                  `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-                  `error_message` VARCHAR(500) DEFAULT NULL,
-                  `sent_at` DATETIME DEFAULT NULL,
-                  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  PRIMARY KEY (`id`),
-                  UNIQUE KEY `uk_campaign_subscriber` (`campaign_id`, `subscriber_id`),
-                  KEY `idx_deliveries_campaign` (`campaign_id`),
-                  KEY `idx_deliveries_status` (`status`),
-                  KEY `idx_deliveries_sent_at` (`sent_at`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        // 3. Ensure system_logs table exists
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `system_logs` (
+              `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+              `level` VARCHAR(16) NOT NULL DEFAULT 'info',
+              `channel` VARCHAR(64) NOT NULL DEFAULT 'app',
+              `message` TEXT NOT NULL,
+              `context` JSON DEFAULT NULL,
+              `ip_address` VARCHAR(45) DEFAULT NULL,
+              `user_agent` VARCHAR(255) DEFAULT NULL,
+              `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              KEY `idx_syslogs_level` (`level`),
+              KEY `idx_syslogs_channel` (`channel`),
+              KEY `idx_syslogs_created` (`created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
 
-                CREATE TABLE IF NOT EXISTS `system_settings` (
-                  `setting_key` VARCHAR(64) NOT NULL,
-                  `setting_value` TEXT DEFAULT NULL,
-                  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                  PRIMARY KEY (`setting_key`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        // 4. Ensure subscribers & newsletter tables exist
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `subscribers` (
+              `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+              `email` VARCHAR(191) NOT NULL,
+              `status` ENUM('pending', 'active', 'unsubscribed') NOT NULL DEFAULT 'active',
+              `token` VARCHAR(64) NOT NULL,
+              `ip_address` VARCHAR(45) DEFAULT NULL,
+              `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              `confirmed_at` DATETIME DEFAULT NULL,
+              `unsubscribed_at` DATETIME DEFAULT NULL,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `uk_subscribers_email` (`email`),
+              KEY `idx_subscribers_status` (`status`),
+              KEY `idx_subscribers_token` (`token`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-                INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) 
-                VALUES ('cron_secret', 'greenavic_cron_sec_8f7b2a9e3d4c1'),
-                       ('schema_version', '1.1');
-            ");
-        } else {
-            // Table exists: verify column migrations safely without repeated locking
-            try {
-                // Ensure system_settings table exists
-                $pdo->exec("
-                    CREATE TABLE IF NOT EXISTS `system_settings` (
-                      `setting_key` VARCHAR(64) NOT NULL,
-                      `setting_value` TEXT DEFAULT NULL,
-                      `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                      PRIMARY KEY (`setting_key`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            CREATE TABLE IF NOT EXISTS `newsletter_campaigns` (
+              `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+              `article_id` INT UNSIGNED NOT NULL,
+              `subject` VARCHAR(255) NOT NULL,
+              `status` ENUM('pending', 'sending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
+              `total_subscribers` INT UNSIGNED NOT NULL DEFAULT 0,
+              `sent_count` INT UNSIGNED NOT NULL DEFAULT 0,
+              `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
+              `pending_count` INT UNSIGNED NOT NULL DEFAULT 0,
+              `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              `completed_at` DATETIME DEFAULT NULL,
+              PRIMARY KEY (`id`),
+              KEY `idx_campaigns_article` (`article_id`),
+              KEY `idx_campaigns_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-                    INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) 
-                    VALUES ('cron_secret', 'greenavic_cron_sec_8f7b2a9e3d4c1');
-                ");
+            CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
+              `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+              `campaign_id` INT UNSIGNED NOT NULL,
+              `subscriber_id` INT UNSIGNED NOT NULL,
+              `email` VARCHAR(191) NOT NULL,
+              `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
+              `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+              `error_message` VARCHAR(500) DEFAULT NULL,
+              `sent_at` DATETIME DEFAULT NULL,
+              `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `uk_campaign_subscriber` (`campaign_id`, `subscriber_id`),
+              KEY `idx_deliveries_campaign` (`campaign_id`),
+              KEY `idx_deliveries_status` (`status`),
+              KEY `idx_deliveries_sent_at` (`sent_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
 
-                // Check if confirmed_at is missing before running ALTER
-                $colCheck = $pdo->query("SHOW COLUMNS FROM `subscribers` LIKE 'confirmed_at'");
-                if ($colCheck->rowCount() === 0) {
-                    $pdo->exec("ALTER TABLE `subscribers` MODIFY COLUMN `status` ENUM('pending', 'active', 'unsubscribed') NOT NULL DEFAULT 'pending'");
-                    $pdo->exec("ALTER TABLE `subscribers` ADD COLUMN `confirmed_at` DATETIME DEFAULT NULL AFTER `created_at`");
-                }
-
-                // Check if newsletter_deliveries exists
-                $delTableCheck = $pdo->query("SHOW TABLES LIKE 'newsletter_deliveries'");
-                if ($delTableCheck->rowCount() === 0) {
-                    $pdo->exec("
-                        CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
-                          `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                          `campaign_id` INT UNSIGNED NOT NULL,
-                          `subscriber_id` INT UNSIGNED NOT NULL,
-                          `email` VARCHAR(191) NOT NULL,
-                          `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
-                          `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-                          `error_message` VARCHAR(500) DEFAULT NULL,
-                          `sent_at` DATETIME DEFAULT NULL,
-                          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          PRIMARY KEY (`id`),
-                          UNIQUE KEY `uk_campaign_subscriber` (`campaign_id`, `subscriber_id`),
-                          KEY `idx_deliveries_campaign` (`campaign_id`),
-                          KEY `idx_deliveries_status` (`status`),
-                          KEY `idx_deliveries_sent_at` (`sent_at`)
-                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-                    ");
-                } else {
-                    $delCheck = $pdo->query("SHOW COLUMNS FROM `newsletter_deliveries` LIKE 'attempts'");
-                    if ($delCheck->rowCount() === 0) {
-                        $pdo->exec("ALTER TABLE `newsletter_deliveries` ADD COLUMN `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER `status`");
-                        $pdo->exec("ALTER TABLE `newsletter_deliveries` MODIFY COLUMN `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending'");
-                    }
-                }
-
-                // Migrate any legacy pending subscribers to active
-                $pdo->exec("UPDATE `subscribers` SET `status` = 'active' WHERE `status` = 'pending'");
-
-                // Mark schema as migrated to version 2.0 (Direct Single Opt-In & Delivery Queue)
-                $pdo->exec("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('schema_version', '2.0') ON DUPLICATE KEY UPDATE setting_value = '2.0'");
-            } catch (Exception $alterEx) {
-                // Non-fatal if already up to date
+        // 5. Check and migrate `users` columns safely
+        try {
+            $userCols = $pdo->query("SHOW COLUMNS FROM `users`")->fetchAll(PDO::FETCH_COLUMN, 0);
+            if (!in_array('name', $userCols, true)) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `name` VARCHAR(150) NOT NULL DEFAULT 'Administrator' AFTER `email`");
             }
+            if (!in_array('role', $userCols, true)) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `role` VARCHAR(50) NOT NULL DEFAULT 'admin' AFTER `name`");
+            }
+            if (!in_array('status', $userCols, true)) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `status` ENUM('active', 'pending') NOT NULL DEFAULT 'active' AFTER `role`");
+            }
+            if (!in_array('created_at', $userCols, true)) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`");
+            }
+            if (!in_array('updated_at', $userCols, true)) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
+            }
+        } catch (Exception $uEx) {
+            // Non-fatal if already present
         }
+
+        // 6. Check and migrate `subscribers` & `newsletter_deliveries` columns
+        try {
+            $subCols = $pdo->query("SHOW COLUMNS FROM `subscribers`")->fetchAll(PDO::FETCH_COLUMN, 0);
+            if (!in_array('confirmed_at', $subCols, true)) {
+                $pdo->exec("ALTER TABLE `subscribers` MODIFY COLUMN `status` ENUM('pending', 'active', 'unsubscribed') NOT NULL DEFAULT 'active'");
+                $pdo->exec("ALTER TABLE `subscribers` ADD COLUMN `confirmed_at` DATETIME DEFAULT NULL AFTER `created_at`");
+            }
+            $pdo->exec("UPDATE `subscribers` SET `status` = 'active' WHERE `status` = 'pending'");
+        } catch (Exception $sEx) {}
+
+        try {
+            $delCols = $pdo->query("SHOW COLUMNS FROM `newsletter_deliveries`")->fetchAll(PDO::FETCH_COLUMN, 0);
+            if (!in_array('attempts', $delCols, true)) {
+                $pdo->exec("ALTER TABLE `newsletter_deliveries` ADD COLUMN `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER `status`");
+                $pdo->exec("ALTER TABLE `newsletter_deliveries` MODIFY COLUMN `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending'");
+            }
+        } catch (Exception $dEx) {}
+
+        // Mark schema version 2.1
+        $pdo->exec("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('schema_version', '2.1') ON DUPLICATE KEY UPDATE setting_value = '2.1'");
 
         $initialized = true;
         return true;

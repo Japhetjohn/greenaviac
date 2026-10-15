@@ -178,12 +178,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (featAuthor) featAuthor.textContent = authorName;
 
         if (featImage && featMediaContainer) {
+            const fallbackPlaceholder = 'assets/images/brand/greenavic-placeholder.svg';
+            featImage.onerror = function() {
+                this.onerror = null;
+                this.src = fallbackPlaceholder;
+            };
             if (article.cover_image) {
                 featImage.src = article.cover_image;
                 featImage.alt = article.cover_alt || article.title;
                 featMediaContainer.style.display = 'block';
             } else {
-                featMediaContainer.style.display = 'none';
+                featImage.src = fallbackPlaceholder;
+                featImage.alt = 'Green AVIC Publication';
+                featMediaContainer.style.display = 'block';
             }
         }
 
@@ -211,6 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (readBody) readBody.innerHTML = article.body;
 
         if (readFigure && readImage) {
+            const fallbackPlaceholder = 'assets/images/brand/greenavic-placeholder.svg';
+            readImage.onerror = function() {
+                this.onerror = null;
+                this.src = fallbackPlaceholder;
+            };
             if (article.cover_image) {
                 readImage.src = article.cover_image;
                 readImage.alt = article.cover_alt || article.title;

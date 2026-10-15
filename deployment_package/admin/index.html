@@ -13,7 +13,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 
     <!-- Admin Stylesheet -->
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin.css?v=2.2">
 </head>
 <body>
 
@@ -57,6 +57,13 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                     <span>Team &amp; Admins (<strong id="navAdminsCount">1</strong>)</span>
+                </button>
+
+                <button type="button" id="btnHealthLogs" class="nav-link-btn" title="View System Health & Audit Logs">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Health &amp; Logs</span>
                 </button>
 
                 <div class="user-badge" id="adminUserBadge">
@@ -103,11 +110,13 @@
                         <span id="overviewStatusText">Checking Status...</span>
                     </span>
                     <span id="overviewLastUpdated" class="last-updated"></span>
-                    <span id="overviewAudienceBadge" class="status-badge" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; cursor: pointer;" title="Click to view newsletter audience & broadcasts">
-                        👥 <strong id="overviewSubscribersCount">0</strong> Subscribers
+                    <span id="overviewAudienceBadge" class="status-badge" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; cursor: pointer;" title="Click to view newsletter audience & broadcasts" tabindex="0" role="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <strong id="overviewSubscribersCount">0</strong> Subscribers
                     </span>
-                    <span id="overviewAdminBadge" class="status-badge" style="background: #EBF3FA; color: #1565C0; border: 1px solid #BBDEFB; cursor: pointer;" title="Click to view team & administrators">
-                        🛡️ <strong id="overviewAdminBadgeCount">1</strong> Admin(s)
+                    <span id="overviewAdminBadge" class="status-badge" style="background: #EBF3FA; color: #1565C0; border: 1px solid #BBDEFB; cursor: pointer;" title="Click to view team & administrators" tabindex="0" role="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <strong id="overviewAdminBadgeCount">1</strong> Admin(s)
                     </span>
                 </div>
 
@@ -125,7 +134,7 @@
             <!-- Published Article Display -->
             <div id="overviewPublishedDetails" class="publication-preview-layout" style="display: none;">
                 <div class="pub-thumbnail" id="overviewThumbContainer">
-                    <img id="overviewThumbnail" src="" alt="Publication Thumbnail">
+                    <img id="overviewThumbnail" src="" alt="Publication Thumbnail" onerror="this.onerror=null;this.src='assets/images/brand/greenavic-placeholder.svg'">
                 </div>
                 <div class="pub-info-content">
                     <div style="margin-bottom: 8px;">
@@ -328,7 +337,7 @@
                         <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">1. List</button>
                         <button type="button" class="toolbar-btn" data-command="formatBlock" data-val="blockquote" title="Quote Block">“ Quote</button>
                         <div class="toolbar-divider"></div>
-                        <button type="button" class="toolbar-btn" id="btnInsertLink" title="Insert Web Link">🔗 Link</button>
+                        <button type="button" class="toolbar-btn" id="btnInsertLink" title="Insert Web Link">Link</button>
                         <button type="button" class="toolbar-btn" data-command="insertHorizontalRule" title="Divider Line">— Divider</button>
                         <button type="button" class="toolbar-btn" data-command="removeFormat" title="Clear Formatting">✕ Clear</button>
                     </div>
@@ -458,7 +467,7 @@
 
     <!-- Modal: Manage Administrators & Invites -->
     <div id="adminsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="adminsModalTitle" style="display: none;">
-        <div class="modal-card" style="max-width: 580px;">
+        <div class="modal-card" style="max-width: 680px;">
             <header class="modal-header">
                 <h3 class="modal-title" id="adminsModalTitle">Team &amp; Administrators</h3>
                 <button type="button" class="modal-close-btn" id="btnCloseAdminsModal" aria-label="Close Modal">
@@ -471,7 +480,7 @@
             <div class="modal-body" style="padding: 24px;">
                 <!-- Section 1: Invite Client Link -->
                 <div style="background: #F4FBF4; border: 1.5px dashed #A5D6A7; border-radius: 10px; padding: 18px; margin-bottom: 24px;">
-                    <h4 style="color: #0D3D2F; font-size: 15px; margin-bottom: 6px;">👥 Invite Co-Admin or Client</h4>
+                    <h4 style="color: #0D3D2F; font-size: 15px; margin-bottom: 6px;">Invite Co-Admin or Client</h4>
                     <p style="font-size: 13px; color: #555; margin-bottom: 12px; line-height: 1.4;">
                         Generate a secure onboarding link to send to your client or co-admin. She can set her own email and private password:
                     </p>
@@ -482,25 +491,41 @@
                     </div>
                 </div>
 
-                <!-- Section 2: Active Admins List -->
-                <h4 style="color: #0D3D2F; font-size: 15px; margin-bottom: 10px;">Active Administrators (<span id="modalAdminsCount">1</span>)</h4>
-                <div id="adminsListContainer" style="margin-bottom: 24px;">
-                    <p style="font-size: 13px; color: #888;">Loading active administrators...</p>
+                <!-- Section 2: Active Admins List Table -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="color: #0D3D2F; font-size: 15px; margin: 0;">Active Administrators (<span id="modalAdminsCount">1</span>)</h4>
+                    <button type="button" id="btnRefreshAdmins" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;">Refresh</button>
+                </div>
+                <div id="adminsListContainer" style="margin-bottom: 24px; border: 1px solid #EAEAEA; border-radius: 8px; overflow: hidden; background: #fff;">
+                    <p style="font-size: 13px; color: #888; padding: 16px;">Loading active administrators...</p>
                 </div>
 
                 <!-- Section 3: Add Admin Directly -->
                 <details style="border-top: 1px solid #E2E8E2; padding-top: 16px;">
                     <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #2E7D32;">+ Or Add Administrator Directly</summary>
                     <form id="formAddAdminDirect" style="margin-top: 14px;">
-                        <div style="margin-bottom: 12px;">
-                            <label style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Email</label>
-                            <input type="email" id="newAdminEmail" required placeholder="admin@greenavic.org" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Full Name</label>
+                                <input type="text" id="newAdminName" placeholder="Administrator Name" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Role</label>
+                                <select id="newAdminRole" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: #fff;">
+                                    <option value="admin">Administrator (Full Access)</option>
+                                    <option value="editor">Editor (Content Management)</option>
+                                </select>
+                            </div>
                         </div>
                         <div style="margin-bottom: 12px;">
+                            <label style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Email Address</label>
+                            <input type="email" id="newAdminEmail" required placeholder="admin@greenavic.org" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                        </div>
+                        <div style="margin-bottom: 14px;">
                             <label style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Temporary Password (min 8 chars)</label>
                             <input type="password" id="newAdminPassword" required minlength="8" placeholder="Initial password" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
                         </div>
-                        <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">Add Admin</button>
+                        <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">Add Admin Account</button>
                     </form>
                 </details>
             </div>
@@ -624,6 +649,123 @@
             <footer class="modal-footer">
                 <button type="button" class="btn btn-outline" id="btnCloseSubscribersModalBottom">Close</button>
             </footer>
+    <!-- Modal: System Health & Diagnostic Logs -->
+    <div id="healthLogsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="healthLogsModalTitle" style="display: none;">
+        <div class="modal-card" style="max-width: 880px;">
+            <header class="modal-header">
+                <h3 class="modal-title" id="healthLogsModalTitle">System Health &amp; Diagnostics</h3>
+                <button type="button" class="modal-close-btn" id="btnCloseHealthLogsModal" aria-label="Close Modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal-body" style="padding: 24px;">
+                <!-- Tab Controls -->
+                <div style="display: flex; gap: 8px; border-bottom: 2px solid #E2E8E2; margin-bottom: 20px;">
+                    <button type="button" id="tabBtnHealth" class="btn" style="background: transparent; border: none; border-bottom: 3px solid #2E7D32; border-radius: 0; color: #2E7D32; font-weight: 700; padding: 8px 16px; cursor: pointer;">System Health</button>
+                    <button type="button" id="tabBtnLogs" class="btn" style="background: transparent; border: none; border-bottom: 3px solid transparent; border-radius: 0; color: #666; font-weight: 600; padding: 8px 16px; cursor: pointer;">Audit Logs</button>
+                </div>
+
+                <!-- Tab 1: System Health -->
+                <div id="tabContentHealth">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                        <!-- MariaDB Database Card -->
+                        <div style="background: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 8px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #1B382B; font-size: 13.5px;">MariaDB Database</strong>
+                                <span id="healthDbBadge" class="status-badge published" style="font-size: 11px;">Checking...</span>
+                            </div>
+                            <div id="healthDbDetails" style="font-size: 12.5px; color: #555; line-height: 1.6;">
+                                <div>Name: <code id="healthDbName">-</code></div>
+                                <div>Latency: <span id="healthDbLatency">-</span> ms</div>
+                                <div>Schema: <span id="healthDbSchema">v2.1</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Hostinger SMTP Mailer Card -->
+                        <div style="background: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 8px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #1B382B; font-size: 13.5px;">Hostinger SMTP</strong>
+                                <span id="healthSmtpBadge" class="status-badge" style="font-size: 11px;">Checking...</span>
+                            </div>
+                            <div id="healthSmtpDetails" style="font-size: 12.5px; color: #555; line-height: 1.6;">
+                                <div>Configured: <strong id="healthSmtpConfigured">-</strong></div>
+                                <div>Socket Handshake: <span id="healthSmtpTested">-</span></div>
+                                <div>Delivery Verified: <span id="healthSmtpVerified">-</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Queue & Subscribers Card -->
+                        <div style="background: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 8px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #1B382B; font-size: 13.5px;">Subscribers &amp; Queue</strong>
+                                <span id="healthQueueBadge" class="status-badge" style="font-size: 11px;">Active</span>
+                            </div>
+                            <div id="healthQueueDetails" style="font-size: 12.5px; color: #555; line-height: 1.6;">
+                                <div>Active Subs: <strong id="healthActiveSubs">0</strong></div>
+                                <div>Pending Deliv: <span id="healthPendingDeliv">0</span></div>
+                                <div>Failed Deliv: <span id="healthFailedDeliv">0</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Server Runtime Card -->
+                        <div style="background: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 8px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #1B382B; font-size: 13.5px;">Server Runtime</strong>
+                                <span id="healthRuntimeBadge" class="status-badge published" style="font-size: 11px;">PHP 8.3</span>
+                            </div>
+                            <div id="healthRuntimeDetails" style="font-size: 12.5px; color: #555; line-height: 1.6;">
+                                <div>Memory: <span id="healthMemory">-</span></div>
+                                <div>Disk Free: <span id="healthDisk">-</span></div>
+                                <div>Server Time: <span id="healthServerTime">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <button type="button" id="btnRefreshHealth" class="btn btn-outline" style="font-size: 12.5px; padding: 6px 14px;">Refresh Diagnostics</button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Audit Logs -->
+                <div id="tabContentLogs" style="display: none;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;">
+                        <select id="logLevelFilter" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12.5px; background: #fff;">
+                            <option value="all">All Severity Levels</option>
+                            <option value="error">Errors Only</option>
+                            <option value="warning">Warnings Only</option>
+                            <option value="info">Info Only</option>
+                        </select>
+                        <input type="text" id="logSearchInput" placeholder="Search logs by keyword..." style="flex: 1; min-width: 180px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12.5px;">
+                        <button type="button" id="btnFilterLogs" class="btn btn-outline" style="padding: 6px 12px; font-size: 12.5px;">Filter</button>
+                        <a href="api/logs.php?action=download" class="btn btn-primary" id="btnDownloadLogs" style="padding: 6px 12px; font-size: 12.5px; text-decoration: none;" download>Export Report</a>
+                    </div>
+
+                    <div style="max-height: 360px; overflow-y: auto; border: 1px solid #E0E0E0; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                            <thead style="background: #F8FAF9; position: sticky; top: 0; border-bottom: 1px solid #E0E0E0;">
+                                <tr>
+                                    <th style="padding: 8px 10px; color: #555;">Time</th>
+                                    <th style="padding: 8px 10px; color: #555;">Level</th>
+                                    <th style="padding: 8px 10px; color: #555;">Channel</th>
+                                    <th style="padding: 8px 10px; color: #555;">Message</th>
+                                    <th style="padding: 8px 10px; color: #555;">IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr>
+                                    <td colspan="5" style="padding: 20px; text-align: center; color: #888;">Loading logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="btn btn-outline" id="btnCloseHealthLogsModalBottom">Close</button>
+            </footer>
         </div>
     </div>
 
@@ -633,6 +775,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="admin.js"></script>
+    <script src="admin.js?v=2.2"></script>
 </body>
 </html>

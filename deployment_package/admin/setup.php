@@ -693,7 +693,7 @@ if ($isAuthorized && $pdo && $adminCount === 0 && $_SERVER['REQUEST_METHOD'] ===
 
             <?php if ($clientInviteUrl): ?>
                 <div class="invite-box">
-                    <h3>👥 Onboard Your Client / Co-Admin</h3>
+                    <h3>Onboard Your Client / Co-Admin</h3>
                     <p>Send this private link to your client so she can set her own email and choose her own private password:</p>
                     <div class="invite-input-row">
                         <input type="text" id="inviteUrlInput" value="<?= htmlspecialchars($clientInviteUrl) ?>" readonly>

@@ -278,59 +278,41 @@
         <!-- Email Newsletter Subscription Section -->
         <section class="newsletter-subscribe-section" id="subscribeSection" aria-labelledby="subscribeHeading">
             <div class="container">
-                <div class="subscribe-card">
-                    <div class="subscribe-header">
-                        <div class="subscribe-badge">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                            <span>Stay Informed</span>
-                        </div>
-                        <h2 id="subscribeHeading" class="subscribe-title">Join the Green AVIC Community</h2>
-                        <p class="subscribe-desc">
-                            Subscribe to receive our latest insights on sustainable menstrual health, biodegradable materials, eco-innovation, and community empowerment delivered directly to your inbox.
-                        </p>
+                <div class="subscribe-split-card">
+                    <!-- Left Rectangle: Relevant Eco-Friendly Showcase Image -->
+                    <div class="subscribe-media-pane">
+                        <img src="assets/images/gallery/fearless-showcase.jpg" alt="Green AVIC Fearless eco-friendly menstrual care showcase" loading="lazy">
                     </div>
 
-                    <form id="subscribeForm" class="subscribe-form" novalidate>
-                        <!-- Anti-spam Honeypot (hidden from real users) -->
-                        <div class="hp-field" aria-hidden="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
-                            <label for="hp_website">Website</label>
-                            <input type="text" id="hp_website" name="website_url" tabindex="-1" autocomplete="off">
-                        </div>
-
-                        <div class="subscribe-input-group">
-                            <div class="input-wrapper">
-                                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
-                                <input type="email" id="subscriberEmail" name="email" class="subscribe-input" placeholder="Enter your email address..." required autocomplete="email" aria-label="Email address for newsletter subscription">
-                            </div>
-                            <button type="submit" id="btnSubscribe" class="btn btn-subscribe">
-                                <span class="btn-text">Subscribe</span>
-                                <span class="btn-spinner" aria-hidden="true"></span>
-                            </button>
-                        </div>
-
-                        <div class="subscribe-consent-group" style="margin: 14px 0 4px; display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: #4A5568; text-align: left;">
-                            <input type="checkbox" id="subscriberConsent" name="consent" required checked style="margin-top: 3px; accent-color: var(--green-primary); width: 16px; height: 16px; cursor: pointer;">
-                            <label for="subscriberConsent" style="cursor: pointer; line-height: 1.45; font-size: 12.5px;">
-                                I agree to receive Green AVIC News &amp; Insights updates by email. I understand I can unsubscribe at any time with a single click.
-                            </label>
-                        </div>
-
-                        <div id="subscribeFeedback" class="subscribe-feedback" role="alert" aria-live="polite"></div>
-
-                        <p class="subscribe-privacy">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                            We respect your privacy. No spam, ever. Unsubscribe at any time with a single click.
+                    <!-- Right Rectangle: Subscription Signup Content -->
+                    <div class="subscribe-form-pane">
+                        <h2 id="subscribeHeading" class="subscribe-heading">Stay Informed with Green AVIC</h2>
+                        <p class="subscribe-lead">
+                            Join our community for the latest updates on sustainable menstrual health, biodegradable materials, and environmental empowerment.
                         </p>
-                    </form>
+
+                        <form id="subscribeForm" class="subscribe-form-inner" novalidate>
+                            <!-- Anti-spam Honeypot -->
+                            <div class="hp-field" aria-hidden="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+                                <label for="hp_website">Website</label>
+                                <input type="text" id="hp_website" name="website_url" tabindex="-1" autocomplete="off">
+                            </div>
+
+                            <div class="subscribe-input-row">
+                                <input type="email" id="subscriberEmail" name="email" class="subscribe-text-input" placeholder="Enter your email address" required autocomplete="email" aria-label="Email address for newsletter subscription">
+                                <button type="submit" id="btnSubscribe" class="btn btn-subscribe-action">
+                                    <span class="btn-text">Subscribe</span>
+                                    <span class="btn-spinner" aria-hidden="true"></span>
+                                </button>
+                            </div>
+
+                            <div id="subscribeFeedback" class="subscribe-feedback" role="alert" aria-live="polite"></div>
+
+                            <div class="subscribe-footer-note">
+                                <span>Direct single opt-in. Unsubscribe at any time with a single click.</span>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>

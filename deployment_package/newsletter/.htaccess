@@ -25,7 +25,7 @@
 </IfModule>
 
 # Protect sensitive files and credentials
-<FilesMatch "(?i)\.(lock|json|bak|config|env|env\..*)$">
+<FilesMatch "(?i)\.(sql|lock|bak|config|env|env\..*)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

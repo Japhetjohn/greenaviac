@@ -35,18 +35,32 @@ if ($method === 'GET') {
     if ($action === 'list_admins') {
         try {
             $user = require_auth($pdo, true);
-            $stmt = $pdo->query("SELECT id, email, created_at FROM users ORDER BY id ASC");
-            $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $stmt = $pdo->query("SELECT id, name, email, role, status, must_change_password, created_at FROM users ORDER BY id ASC");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $admins = [];
+            foreach ($rows as $row) {
+                $status = !empty($row['must_change_password']) ? 'Pending Setup' : ucfirst($row['status'] ?? 'active');
+                $admins[] = [
+                    'id'         => (int)$row['id'],
+                    'name'       => !empty($row['name']) ? $row['name'] : 'Administrator',
+                    'email'      => $row['email'],
+                    'role'       => !empty($row['role']) ? $row['role'] : 'admin',
+                    'status'     => $status,
+                    'is_current' => ((int)$row['id'] === (int)$user['id']),
+                    'created_at' => $row['created_at'] ?? null
+                ];
+            }
+            AppLogger::info('auth', 'Administrator roster retrieved', ['admin_id' => $user['id'], 'count' => count($admins)]);
             json_response([
                 'success' => true,
                 'count'   => count($admins),
                 'admins'  => $admins
             ]);
         } catch (Exception $e) {
-            error_log("list_admins error: " . $e->getMessage());
+            AppLogger::error('auth', 'list_admins error: ' . $e->getMessage());
             json_response([
                 'success' => false,
-                'error'   => 'Unable to load administrators.',
+                'error'   => 'Unable to load administrators: ' . $e->getMessage(),
                 'admins'  => []
             ], 500);
         }
@@ -227,12 +241,23 @@ if ($method === 'POST') {
             json_response(['error' => 'An administrator with this email already exists.'], 400);
         }
 
+        $newName = trim($input['name'] ?? '');
+        if (empty($newName)) {
+            $parts = explode('@', $newEmail);
+            $newName = ucwords(str_replace(['.', '_', '-'], ' ', $parts[0]));
+        }
+        $newRole = trim($input['role'] ?? 'admin');
+        if (!in_array($newRole, ['admin', 'editor'], true)) {
+            $newRole = 'admin';
+        }
+
         $hash = password_hash($newPass, PASSWORD_BCRYPT);
         $ins = $pdo->prepare("
-            INSERT INTO users (email, password_hash, must_change_password, created_at, updated_at)
-            VALUES (?, ?, 1, NOW(), NOW())
+            INSERT INTO users (email, name, role, password_hash, must_change_password, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 1, NOW(), NOW())
         ");
-        $ins->execute([$newEmail, $hash]);
+        $ins->execute([$newEmail, $newName, $newRole, $hash]);
+        AppLogger::info('auth', 'New administrator added', ['email' => $newEmail, 'role' => $newRole, 'by' => $user['id']]);
 
         json_response([
             'success' => true,
@@ -257,6 +282,7 @@ if ($method === 'POST') {
 
         $del = $pdo->prepare("DELETE FROM users WHERE id = ?");
         $del->execute([$delId]);
+        AppLogger::warning('auth', 'Administrator removed', ['target_id' => $delId, 'by' => $user['id']]);
 
         json_response([
             'success' => true,

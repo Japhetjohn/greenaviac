@@ -73,6 +73,7 @@ try {
     if ($existing) {
         // Address is already active
         if ($existing['status'] === 'active') {
+            AppLogger::info('subscribers', 'Subscription request for already active subscriber', ['email' => $email]);
             json_response([
                 'success' => true,
                 'already_subscribed' => true,
@@ -93,6 +94,7 @@ try {
         ");
         $updateStmt->execute([$token, $clientIp, $existing['id']]);
 
+        AppLogger::info('subscribers', 'Subscriber resubscribed', ['email' => $email]);
         json_response([
             'success' => true,
             'message' => 'Welcome back! You have been successfully resubscribed to Green AVIC News & Insights.'
@@ -106,6 +108,8 @@ try {
         VALUES (?, 'active', ?, ?, NOW())
     ");
     $insertStmt->execute([$email, $token, $clientIp]);
+
+    AppLogger::info('subscribers', 'New subscriber registered', ['email' => $email, 'ip' => $clientIp]);
 
     // Optional: Only send a welcome email if explicitly enabled in system_settings
     try {
@@ -137,6 +141,7 @@ try {
     ]);
 
 } catch (Exception $e) {
+    AppLogger::error('subscribers', 'Subscription error: ' . $e->getMessage(), ['email' => $email]);
     error_log("Subscription API error: " . $e->getMessage());
     json_response(['error' => 'An error occurred while saving your subscription. Please try again.'], 500);
 }

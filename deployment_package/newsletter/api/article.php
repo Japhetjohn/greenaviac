@@ -22,6 +22,9 @@ try {
         LIMIT 1
     ");
     $article = $stmt->fetch();
+    if ($article) {
+        $article['cover_image'] = normalize_image_url($article['cover_image'] ?? null);
+    }
 
     json_response(['article' => $article ?: null]);
 } catch (Exception $e) {

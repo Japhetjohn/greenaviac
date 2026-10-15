@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D3D2F"/>
+      <stop offset="60%" stop-color="#145240"/>
+      <stop offset="100%" stop-color="#1B6A53"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4CAF50" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#81C784" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#81C784"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="450" fill="url(#bg)"/>
+
+  <!-- Decorative Botanical Shapes -->
+  <path d="M-50 450 C 150 350, 250 180, 200 0 L -50 0 Z" fill="url(#leafGrad)"/>
+  <path d="M850 0 C 650 100, 550 270, 600 450 L 850 450 Z" fill="url(#leafGrad)"/>
+  <circle cx="400" cy="225" r="160" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-opacity="0.15" stroke-dasharray="6 6"/>
+
+  <!-- Center Brand Icon: Eco Leaf -->
+  <g transform="translate(400, 160) scale(1.4)">
+    <path d="M 0 -35 C 24 -15, 30 15, 0 35 C -30 15, -24 -15, 0 -35 Z" fill="#4CAF50"/>
+    <path d="M 0 -30 L 0 30" stroke="#0D3D2F" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 0 -10 C 10 -5, 14 2, 14 2" stroke="#0D3D2F" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M 0 5 C -10 10, -14 17, -14 17" stroke="#0D3D2F" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="400" y="260" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">GREEN AVIC</text>
+  <text x="400" y="290" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="500" fill="#A5D6A7" text-anchor="middle" letter-spacing="2">NEWS &amp; INSIGHTS</text>
+  <rect x="360" y="310" width="80" height="3" rx="1.5" fill="url(#accent)"/>
+  <text x="400" y="340" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#E0EFE0" text-anchor="middle" fill-opacity="0.75">Empowering Women Sustainably</text>
+</svg>

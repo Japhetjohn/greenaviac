@@ -27,19 +27,29 @@
     RewriteRule ^setup/?$ setup.php [L]
     RewriteRule ^invite/?$ invite.php [L]
 
-    # 4. API & Script Clean URLs
+    # 4. Uploads passthrough to newsletter subdomain
+    RewriteRule ^uploads/(.*)$ https://newsletter.greenavic.org/uploads/$1 [R=301,L]
+
+    # 5. Diagnostic & Logging API Routes
+    RewriteRule ^api/admin/health/database/?$ api/health.php?action=database [L,QSA]
+    RewriteRule ^api/admin/health/?$ api/health.php?action=health [L,QSA]
+    RewriteRule ^api/admin/logs/summary/?$ api/logs.php?action=summary [L,QSA]
+    RewriteRule ^api/admin/logs/download/?$ api/logs.php?action=download [L,QSA]
+    RewriteRule ^api/admin/logs/?$ api/logs.php?action=logs [L,QSA]
+
+    # 6. API & Script Clean URLs
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME}\.php -f
     RewriteRule ^(.*)$ $1.php [L,QSA]
 
-    # 5. Clean HTML page URLs
+    # 7. Clean HTML page URLs
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME}\.html -f
     RewriteRule ^(.*)$ $1.html [L,QSA]
 </IfModule>
 
 # Protect sensitive files and credentials
-<FilesMatch "(?i)\.(lock|json|bak|config|env|env\..*)$">
+<FilesMatch "(?i)\.(sql|lock|bak|config|env|env\..*)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

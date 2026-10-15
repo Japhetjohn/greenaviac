@@ -102,12 +102,13 @@ class GreenAvicMailer {
             }
 
             $mail->send();
+            AppLogger::info('smtp', 'Email dispatched successfully', ['to' => $to, 'subject' => $subject]);
             return ['success' => true, 'error' => null];
         } catch (MailerException $e) {
-            error_log("PHPMailer error sending to {$to}: " . $e->getMessage());
+            AppLogger::error('smtp', 'PHPMailer error: ' . $e->getMessage(), ['to' => $to, 'subject' => $subject]);
             return ['success' => false, 'error' => $e->getMessage()];
         } catch (Exception $e) {
-            error_log("Unexpected mail error: " . $e->getMessage());
+            AppLogger::error('smtp', 'Unexpected mail error: ' . $e->getMessage(), ['to' => $to, 'subject' => $subject]);
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }

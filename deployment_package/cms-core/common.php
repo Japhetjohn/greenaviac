@@ -5,6 +5,7 @@
 
 defined('GREENAVIC_CORE') or define('GREENAVIC_CORE', true);
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/db.php';
 
 // ==========================================================
@@ -179,6 +180,26 @@ function sanitize_article_html(string $html): string {
     $clean = preg_replace('#href\s*=\s*(["\'])\s*javascript:.*?\1#is', 'href="#"', $clean);
 
     return trim($clean);
+}
+
+function normalize_image_url(?string $url): string {
+    if (empty($url) || trim($url) === '') {
+        return 'https://newsletter.greenavic.org/assets/images/brand/greenavic-placeholder.svg';
+    }
+    $url = trim($url);
+    if (preg_match('#^https?://#i', $url)) {
+        return $url;
+    }
+    if (str_starts_with($url, '//')) {
+        return 'https:' . $url;
+    }
+    if (str_starts_with($url, 'uploads/') || str_starts_with($url, '/uploads/')) {
+        return 'https://newsletter.greenavic.org/' . ltrim($url, '/');
+    }
+    if (str_starts_with($url, 'assets/') || str_starts_with($url, '/assets/')) {
+        return 'https://newsletter.greenavic.org/' . ltrim($url, '/');
+    }
+    return 'https://newsletter.greenavic.org/uploads/' . ltrim($url, '/');
 }
 
 function json_response(array $data, int $status_code = 200): void {
