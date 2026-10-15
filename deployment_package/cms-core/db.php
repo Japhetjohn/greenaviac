@@ -57,7 +57,7 @@ function ensure_tables_exist(PDO $pdo): bool {
         // Fast-path: Check if already verified in current database
         try {
             $verStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'schema_version' LIMIT 1");
-            if ($verStmt && $verStmt->fetchColumn() === '1.1') {
+            if ($verStmt && in_array($verStmt->fetchColumn(), ['1.1', '2.0'], true)) {
                 $initialized = true;
                 return true;
             }
@@ -192,8 +192,11 @@ function ensure_tables_exist(PDO $pdo): bool {
                     }
                 }
 
-                // Mark schema as migrated
-                $pdo->exec("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('schema_version', '1.1') ON DUPLICATE KEY UPDATE setting_value = '1.1'");
+                // Migrate any legacy pending subscribers to active
+                $pdo->exec("UPDATE `subscribers` SET `status` = 'active' WHERE `status` = 'pending'");
+
+                // Mark schema as migrated to version 2.0 (Direct Single Opt-In & Delivery Queue)
+                $pdo->exec("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('schema_version', '2.0') ON DUPLICATE KEY UPDATE setting_value = '2.0'");
             } catch (Exception $alterEx) {
                 // Non-fatal if already up to date
             }

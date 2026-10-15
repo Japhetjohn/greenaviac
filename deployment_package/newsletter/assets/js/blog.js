@@ -328,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const subscriberEmail = document.getElementById('subscriberEmail');
     const btnSubscribe = document.getElementById('btnSubscribe');
     const subscribeFeedback = document.getElementById('subscribeFeedback');
+    const subscriberConsent = document.getElementById('subscriberConsent');
     const hpWebsite = document.getElementById('hp_website');
 
     if (subscribeForm && subscriberEmail && btnSubscribe) {
@@ -348,6 +349,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Consent validation
+            if (subscriberConsent && !subscriberConsent.checked) {
+                if (subscribeFeedback) {
+                    subscribeFeedback.className = 'subscribe-feedback is-error';
+                    subscribeFeedback.textContent = 'Please check the box to agree to receive newsletter updates.';
+                }
+                subscriberConsent.focus();
+                return;
+            }
+
             // UI Loading state
             btnSubscribe.disabled = true;
             btnSubscribe.classList.add('is-loading');
@@ -365,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         email: email,
+                        consent: true,
                         website_url: hpVal
                     })
                 });

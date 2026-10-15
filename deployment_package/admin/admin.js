@@ -1074,7 +1074,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Stats Cards
             if (data.stats) {
                 if (statActiveSubscribers) statActiveSubscribers.textContent = data.stats.active || 0;
-                if (statPendingSubscribers) statPendingSubscribers.textContent = data.stats.pending || 0;
+                if (statPendingSubscribers) statPendingSubscribers.textContent = data.stats.total || data.stats.active || 0;
                 if (statUnsubscribed) statUnsubscribed.textContent = data.stats.unsubscribed || 0;
                 if (overviewSubscribersCount) overviewSubscribersCount.textContent = data.stats.active || 0;
             }

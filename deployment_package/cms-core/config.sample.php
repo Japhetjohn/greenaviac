@@ -25,6 +25,7 @@ define('DB_PORT', 3306);
 // Replace with a secure random string (e.g. bin2hex(random_bytes(32)))
 define('SESSION_SECRET', 'REPLACE_WITH_A_RANDOM_SECURE_64_CHAR_HEX_KEY');
 define('SESSION_LIFETIME', 86400); // 24 hours in seconds
+define('SETUP_TOKEN', 'greenavic_setup_9a8b7c6d5e4f'); // One-time web installer security token
 
 // ----------------------------------------------------------
 // Subdomain URLs & File Paths

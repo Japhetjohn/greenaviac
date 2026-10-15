@@ -1,9 +1,9 @@
 <?php
 /**
- * Green AVIC Newsletter — Double Opt-In Subscription API
+ * Green AVIC Newsletter — Direct Email Subscription API
  * 
- * Handles public subscription requests, honeypot spam protection,
- * duplicate handling, rate limiting, and automated verification email dispatch.
+ * Handles public subscription requests with verified consent, honeypot spam protection,
+ * rate limiting, and instant activation without requiring an email verification link.
  */
 
 require_once dirname(__DIR__, 2) . '/cms-core/common.php';
@@ -20,16 +20,15 @@ if (!is_array($data)) {
     $data = $_POST;
 }
 
-// 1. Anti-bot Honeypot Check
+// 1. Anti-bot Honeypot Check (Silently drop bots)
 if (!empty($data['website_url']) || !empty($data['hp_company'])) {
-    // Silently succeed so bots don't adapt
     json_response([
         'success' => true,
-        'message' => 'Thank you! Please check your email to confirm your subscription.'
+        'message' => 'Thank you for subscribing to Green AVIC News & Insights!'
     ]);
 }
 
-// 2. Validate Email
+// 2. Validate Email Address
 $email = isset($data['email']) ? trim((string)$data['email']) : '';
 $email = strtolower($email);
 
@@ -37,11 +36,17 @@ if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email
     json_response(['error' => 'Please provide a valid email address.'], 422);
 }
 
-// 3. Connect to Database
+// 3. Verify Explicit Consent
+$consent = !empty($data['consent']) || (isset($data['consent']) && $data['consent'] !== 'false');
+if (!$consent) {
+    json_response(['error' => 'Please check the box to confirm your consent to receive newsletter updates.'], 422);
+}
+
+// 4. Connect to Database
 $pdo = get_db();
 ensure_tables_exist($pdo);
 
-// 4. Rate Limiting per IP (Max 10 signups per IP per hour)
+// 5. Rate Limiting per IP (Max 10 submissions per IP per hour)
 $clientIp = get_client_ip();
 try {
     $rateStmt = $pdo->prepare("
@@ -59,66 +64,76 @@ try {
     // Non-fatal fallback
 }
 
-$mailer = new GreenAvicMailer();
-
-// 5. Handle Subscriber Record & Verification Dispatch
+// 6. Direct Subscription Handler
 try {
     $checkStmt = $pdo->prepare("SELECT id, email, status, token FROM subscribers WHERE email = ? LIMIT 1");
     $checkStmt->execute([$email]);
     $existing = $checkStmt->fetch();
 
     if ($existing) {
+        // Address is already active
         if ($existing['status'] === 'active') {
             json_response([
                 'success' => true,
                 'already_subscribed' => true,
-                'message' => 'You are already a confirmed subscriber to Green AVIC News & Insights!'
+                'message' => 'You are already subscribed to Green AVIC News & Insights updates!'
             ]);
         }
 
-        // Resend confirmation email for pending or reactivating contact
+        // Resubscribing with new consent (previously unsubscribed or legacy pending)
         $token = bin2hex(random_bytes(32));
         $updateStmt = $pdo->prepare("
             UPDATE subscribers 
-            SET status = 'pending', 
+            SET status = 'active', 
                 token = ?, 
                 ip_address = ?, 
+                unsubscribed_at = NULL,
                 created_at = NOW() 
             WHERE id = ?
         ");
         $updateStmt->execute([$token, $clientIp, $existing['id']]);
 
-        $confirmUrl = NEWSLETTER_URL . '/confirm?token=' . urlencode($token);
-        $mailResult = $mailer->sendConfirmationEmail($email, $confirmUrl);
-
-        if (!$mailResult['success']) {
-            error_log("Failed to send confirmation email: " . ($mailResult['error'] ?? 'Unknown'));
-        }
-
         json_response([
             'success' => true,
-            'message' => 'A verification link has been sent to your email. Please check your inbox (and spam folder) to complete your subscription.'
+            'message' => 'Welcome back! You have been successfully resubscribed to Green AVIC News & Insights.'
         ]);
     }
 
-    // New Subscriber: insert with status 'pending' (Double Opt-In)
+    // New Subscriber: immediately store as 'active' (Direct Single Opt-In)
     $token = bin2hex(random_bytes(32));
     $insertStmt = $pdo->prepare("
         INSERT INTO subscribers (email, status, token, ip_address, created_at)
-        VALUES (?, 'pending', ?, ?, NOW())
+        VALUES (?, 'active', ?, ?, NOW())
     ");
     $insertStmt->execute([$email, $token, $clientIp]);
 
-    $confirmUrl = NEWSLETTER_URL . '/confirm?token=' . urlencode($token);
-    $mailResult = $mailer->sendConfirmationEmail($email, $confirmUrl);
-
-    if (!$mailResult['success']) {
-        error_log("Failed to send initial confirmation email: " . ($mailResult['error'] ?? 'Unknown'));
+    // Optional: Only send a welcome email if explicitly enabled in system_settings
+    try {
+        $settingStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'send_welcome_email' LIMIT 1");
+        if ($settingStmt && $settingStmt->fetchColumn() === '1') {
+            $mailer = new GreenAvicMailer();
+            if ($mailer->isConfigured()) {
+                $unsubscribeUrl = NEWSLETTER_URL . '/unsubscribe?token=' . urlencode($token);
+                $welcomeSubject = 'Welcome to Green AVIC News & Insights';
+                $welcomeBody = '
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #333;">
+                        <h2 style="color: #0D3D2F;">Welcome to Green AVIC!</h2>
+                        <p>Thank you for subscribing to Green AVIC News & Insights. You will receive updates on sustainable menstrual health, biodegradable materials, eco-innovation, and community impact.</p>
+                        <p style="font-size: 12px; color: #777; margin-top: 30px;">
+                            You can unsubscribe at any time: <a href="' . htmlspecialchars($unsubscribeUrl) . '">Unsubscribe</a>
+                        </p>
+                    </div>
+                ';
+                $mailer->send($email, $welcomeSubject, $welcomeBody, $unsubscribeUrl);
+            }
+        }
+    } catch (Exception $wEx) {
+        // Welcome email failure is non-fatal
     }
 
     json_response([
         'success' => true,
-        'message' => 'Thank you! Please check your inbox (and spam folder) and click the verification link to confirm your subscription.'
+        'message' => 'Thank you for subscribing! You are now subscribed to Green AVIC News & Insights.'
     ]);
 
 } catch (Exception $e) {

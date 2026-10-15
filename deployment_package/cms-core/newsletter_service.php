@@ -208,7 +208,7 @@ function render_newsletter_email(array $article, string $unsubscribeUrl): string
                         <a href="<?php echo MAIN_SITE_URL; ?>" target="_blank" style="color: #B8F542; text-decoration: none; margin: 0 8px;">greenavic.org</a>
                     </div>
                     <p style="margin: 0 0 12px; color: #C8DFD7;">
-                        You received this publication because you confirmed your email subscription with Green AVIC.<br>
+                        You received this publication because you subscribed to Green AVIC News & Insights updates.<br>
                         Empowering women sustainably through eco-friendly innovation.
                     </p>
                     <p style="margin: 0;">
