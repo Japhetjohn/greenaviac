@@ -48,7 +48,23 @@ function get_db(): PDO {
  * Helper to ensure database tables are created if schema.sql was not imported via phpMyAdmin yet.
  */
 function ensure_tables_exist(PDO $pdo): bool {
+    static $initialized = false;
+    if ($initialized) {
+        return true;
+    }
+
     try {
+        // Fast-path: Check if already verified in current database
+        try {
+            $verStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'schema_version' LIMIT 1");
+            if ($verStmt && $verStmt->fetchColumn() === '1.1') {
+                $initialized = true;
+                return true;
+            }
+        } catch (Exception $e) {
+            // system_settings does not exist yet; proceed with creation
+        }
+
         // 1. Check if base users table exists
         $checkUsers = $pdo->query("SHOW TABLES LIKE 'users'");
         if ($checkUsers->rowCount() === 0) {
@@ -56,6 +72,7 @@ function ensure_tables_exist(PDO $pdo): bool {
             if (file_exists($schemaFile)) {
                 $sql = file_get_contents($schemaFile);
                 $pdo->exec($sql);
+                $initialized = true;
                 return true;
             }
         }
@@ -120,20 +137,12 @@ function ensure_tables_exist(PDO $pdo): bool {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
                 INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) 
-                VALUES ('cron_secret', 'greenavic_cron_sec_8f7b2a9e3d4c1');
+                VALUES ('cron_secret', 'greenavic_cron_sec_8f7b2a9e3d4c1'),
+                       ('schema_version', '1.1');
             ");
         } else {
-            // Table exists: verify column migrations
+            // Table exists: verify column migrations safely without repeated locking
             try {
-                // Ensure status enum includes 'pending'
-                $pdo->exec("ALTER TABLE `subscribers` MODIFY COLUMN `status` ENUM('pending', 'active', 'unsubscribed') NOT NULL DEFAULT 'pending'");
-                
-                // Ensure confirmed_at column exists
-                $colCheck = $pdo->query("SHOW COLUMNS FROM `subscribers` LIKE 'confirmed_at'");
-                if ($colCheck->rowCount() === 0) {
-                    $pdo->exec("ALTER TABLE `subscribers` ADD COLUMN `confirmed_at` DATETIME DEFAULT NULL AFTER `created_at`");
-                }
-
                 // Ensure system_settings table exists
                 $pdo->exec("
                     CREATE TABLE IF NOT EXISTS `system_settings` (
@@ -147,17 +156,50 @@ function ensure_tables_exist(PDO $pdo): bool {
                     VALUES ('cron_secret', 'greenavic_cron_sec_8f7b2a9e3d4c1');
                 ");
 
-                // Ensure newsletter_deliveries has attempts column and pending status
-                $delCheck = $pdo->query("SHOW COLUMNS FROM `newsletter_deliveries` LIKE 'attempts'");
-                if ($delCheck->rowCount() === 0) {
-                    $pdo->exec("ALTER TABLE `newsletter_deliveries` ADD COLUMN `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER `status`");
-                    $pdo->exec("ALTER TABLE `newsletter_deliveries` MODIFY COLUMN `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending'");
+                // Check if confirmed_at is missing before running ALTER
+                $colCheck = $pdo->query("SHOW COLUMNS FROM `subscribers` LIKE 'confirmed_at'");
+                if ($colCheck->rowCount() === 0) {
+                    $pdo->exec("ALTER TABLE `subscribers` MODIFY COLUMN `status` ENUM('pending', 'active', 'unsubscribed') NOT NULL DEFAULT 'pending'");
+                    $pdo->exec("ALTER TABLE `subscribers` ADD COLUMN `confirmed_at` DATETIME DEFAULT NULL AFTER `created_at`");
                 }
+
+                // Check if newsletter_deliveries exists
+                $delTableCheck = $pdo->query("SHOW TABLES LIKE 'newsletter_deliveries'");
+                if ($delTableCheck->rowCount() === 0) {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
+                          `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                          `campaign_id` INT UNSIGNED NOT NULL,
+                          `subscriber_id` INT UNSIGNED NOT NULL,
+                          `email` VARCHAR(191) NOT NULL,
+                          `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
+                          `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                          `error_message` VARCHAR(500) DEFAULT NULL,
+                          `sent_at` DATETIME DEFAULT NULL,
+                          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          PRIMARY KEY (`id`),
+                          UNIQUE KEY `uk_campaign_subscriber` (`campaign_id`, `subscriber_id`),
+                          KEY `idx_deliveries_campaign` (`campaign_id`),
+                          KEY `idx_deliveries_status` (`status`),
+                          KEY `idx_deliveries_sent_at` (`sent_at`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                    ");
+                } else {
+                    $delCheck = $pdo->query("SHOW COLUMNS FROM `newsletter_deliveries` LIKE 'attempts'");
+                    if ($delCheck->rowCount() === 0) {
+                        $pdo->exec("ALTER TABLE `newsletter_deliveries` ADD COLUMN `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER `status`");
+                        $pdo->exec("ALTER TABLE `newsletter_deliveries` MODIFY COLUMN `status` ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending'");
+                    }
+                }
+
+                // Mark schema as migrated
+                $pdo->exec("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('schema_version', '1.1') ON DUPLICATE KEY UPDATE setting_value = '1.1'");
             } catch (Exception $alterEx) {
                 // Non-fatal if already up to date
             }
         }
 
+        $initialized = true;
         return true;
     } catch (Exception $e) {
         error_log("Schema initialization error: " . $e->getMessage());

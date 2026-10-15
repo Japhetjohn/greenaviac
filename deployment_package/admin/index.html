@@ -56,7 +56,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <span>Team &amp; Admins</span>
+                    <span>Team &amp; Admins (<strong id="navAdminsCount">1</strong>)</span>
                 </button>
 
                 <div class="user-badge" id="adminUserBadge">
@@ -105,6 +105,9 @@
                     <span id="overviewLastUpdated" class="last-updated"></span>
                     <span id="overviewAudienceBadge" class="status-badge" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; cursor: pointer;" title="Click to view newsletter audience & broadcasts">
                         👥 <strong id="overviewSubscribersCount">0</strong> Subscribers
+                    </span>
+                    <span id="overviewAdminBadge" class="status-badge" style="background: #EBF3FA; color: #1565C0; border: 1px solid #BBDEFB; cursor: pointer;" title="Click to view team & administrators">
+                        🛡️ <strong id="overviewAdminBadgeCount">1</strong> Admin(s)
                     </span>
                 </div>
 
@@ -480,7 +483,7 @@
                 </div>
 
                 <!-- Section 2: Active Admins List -->
-                <h4 style="color: #0D3D2F; font-size: 15px; margin-bottom: 10px;">Active Administrators</h4>
+                <h4 style="color: #0D3D2F; font-size: 15px; margin-bottom: 10px;">Active Administrators (<span id="modalAdminsCount">1</span>)</h4>
                 <div id="adminsListContainer" style="margin-bottom: 24px;">
                     <p style="font-size: 13px; color: #888;">Loading active administrators...</p>
                 </div>

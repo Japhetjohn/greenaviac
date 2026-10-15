@@ -33,10 +33,23 @@ if ($method === 'GET') {
     }
 
     if ($action === 'list_admins') {
-        $user = require_auth($pdo);
-        $stmt = $pdo->query("SELECT id, email, created_at FROM users ORDER BY id ASC");
-        $admins = $stmt->fetchAll();
-        json_response(['admins' => $admins]);
+        try {
+            $user = require_auth($pdo, true);
+            $stmt = $pdo->query("SELECT id, email, created_at FROM users ORDER BY id ASC");
+            $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            json_response([
+                'success' => true,
+                'count'   => count($admins),
+                'admins'  => $admins
+            ]);
+        } catch (Exception $e) {
+            error_log("list_admins error: " . $e->getMessage());
+            json_response([
+                'success' => false,
+                'error'   => 'Unable to load administrators.',
+                'admins'  => []
+            ], 500);
+        }
     }
 
     json_response(['error' => 'Invalid action.'], 400);

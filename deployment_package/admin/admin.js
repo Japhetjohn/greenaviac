@@ -289,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderOverview();
             loadSubscriberAudienceSummary();
+            loadAdminCountSummary();
         } catch (error) {
             console.error('Error loading publications:', error);
             showToast('Failed to load publication status. Please refresh.', true);
@@ -814,7 +815,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Team & Administrators Modal Handling
     // ----------------------------------------------------
     const btnManageAdmins = document.getElementById('btnManageAdmins');
+    const navAdminsCount = document.getElementById('navAdminsCount');
+    const overviewAdminBadge = document.getElementById('overviewAdminBadge');
+    const overviewAdminBadgeCount = document.getElementById('overviewAdminBadgeCount');
     const adminsModal = document.getElementById('adminsModal');
+    const modalAdminsCount = document.getElementById('modalAdminsCount');
     const btnCloseAdminsModal = document.getElementById('btnCloseAdminsModal');
     const btnCloseAdminsModalBottom = document.getElementById('btnCloseAdminsModalBottom');
     const adminsListContainer = document.getElementById('adminsListContainer');
@@ -823,82 +828,109 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCopyInviteLink = document.getElementById('btnCopyInviteLink');
     const formAddAdminDirect = document.getElementById('formAddAdminDirect');
 
+    async function loadAdminCountSummary() {
+        try {
+            const res = await fetch('api/auth.php?action=list_admins', { 
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && Array.isArray(data.admins)) {
+                const count = data.admins.length;
+                if (navAdminsCount) navAdminsCount.textContent = count;
+                if (overviewAdminBadgeCount) overviewAdminBadgeCount.textContent = count;
+                if (modalAdminsCount) modalAdminsCount.textContent = count;
+            }
+        } catch (e) {
+            // Silently ignore summary error
+        }
+    }
+
     if (btnManageAdmins && adminsModal) {
         btnManageAdmins.addEventListener('click', () => {
             adminsModal.style.display = 'flex';
             loadAdminsList();
         });
+    }
 
-        const closeAdmins = () => { adminsModal.style.display = 'none'; };
-        if (btnCloseAdminsModal) btnCloseAdminsModal.addEventListener('click', closeAdmins);
-        if (btnCloseAdminsModalBottom) btnCloseAdminsModalBottom.addEventListener('click', closeAdmins);
+    if (overviewAdminBadge && adminsModal) {
+        overviewAdminBadge.addEventListener('click', () => {
+            adminsModal.style.display = 'flex';
+            loadAdminsList();
+        });
+    }
 
-        // Generate client invite link
-        if (btnGenerateInvite) {
-            btnGenerateInvite.addEventListener('click', async () => {
-                btnGenerateInvite.disabled = true;
-                btnGenerateInvite.textContent = 'Generating...';
-                try {
-                    const res = await fetch('api/auth.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                        body: JSON.stringify({ action: 'create_invite', csrf_token: csrfToken })
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.success) {
-                        inviteLinkInput.value = data.invite_url;
-                        if (btnCopyInviteLink) btnCopyInviteLink.style.display = 'inline-block';
-                        showToast('Client invite link created! Click Copy to share.');
-                    } else {
-                        showToast(data.error || 'Failed to generate invite token.', true);
-                    }
-                } catch (e) {
-                    showToast('Connection error while generating invite.', true);
-                } finally {
-                    btnGenerateInvite.disabled = false;
-                    btnGenerateInvite.textContent = 'Generate New Link';
-                }
-            });
-        }
+    const closeAdmins = () => { if (adminsModal) adminsModal.style.display = 'none'; };
+    if (btnCloseAdminsModal) btnCloseAdminsModal.addEventListener('click', closeAdmins);
+    if (btnCloseAdminsModalBottom) btnCloseAdminsModalBottom.addEventListener('click', closeAdmins);
 
-        // Copy invite link
-        if (btnCopyInviteLink) {
-            btnCopyInviteLink.addEventListener('click', () => {
-                inviteLinkInput.select();
-                navigator.clipboard.writeText(inviteLinkInput.value).then(() => {
-                    btnCopyInviteLink.textContent = 'Copied!';
-                    setTimeout(() => { btnCopyInviteLink.textContent = 'Copy'; }, 2000);
-                    showToast('Invite link copied to clipboard!');
+    // Generate client invite link
+    if (btnGenerateInvite) {
+        btnGenerateInvite.addEventListener('click', async () => {
+            btnGenerateInvite.disabled = true;
+            btnGenerateInvite.textContent = 'Generating...';
+            try {
+                const res = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ action: 'create_invite', csrf_token: csrfToken })
                 });
-            });
-        }
-
-        // Add admin directly
-        if (formAddAdminDirect) {
-            formAddAdminDirect.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('newAdminEmail').value.trim();
-                const password = document.getElementById('newAdminPassword').value;
-
-                try {
-                    const res = await fetch('api/auth.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                        body: JSON.stringify({ action: 'add_admin', email, password, csrf_token: csrfToken })
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.success) {
-                        showToast('New administrator added successfully!');
-                        formAddAdminDirect.reset();
-                        loadAdminsList();
-                    } else {
-                        showToast(data.error || 'Failed to add administrator.', true);
-                    }
-                } catch (e) {
-                    showToast('Network error while adding administrator.', true);
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    inviteLinkInput.value = data.invite_url;
+                    if (btnCopyInviteLink) btnCopyInviteLink.style.display = 'inline-block';
+                    showToast('Client invite link created! Click Copy to share.');
+                } else {
+                    showToast(data.error || 'Failed to generate invite token.', true);
                 }
+            } catch (e) {
+                showToast('Connection error while generating invite.', true);
+            } finally {
+                btnGenerateInvite.disabled = false;
+                btnGenerateInvite.textContent = 'Generate New Link';
+            }
+        });
+    }
+
+    // Copy invite link
+    if (btnCopyInviteLink) {
+        btnCopyInviteLink.addEventListener('click', () => {
+            inviteLinkInput.select();
+            navigator.clipboard.writeText(inviteLinkInput.value).then(() => {
+                btnCopyInviteLink.textContent = 'Copied!';
+                setTimeout(() => { btnCopyInviteLink.textContent = 'Copy'; }, 2000);
+                showToast('Invite link copied to clipboard!');
             });
-        }
+        });
+    }
+
+    // Add admin directly
+    if (formAddAdminDirect) {
+        formAddAdminDirect.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('newAdminEmail').value.trim();
+            const password = document.getElementById('newAdminPassword').value;
+
+            try {
+                const res = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ action: 'add_admin', email, password, csrf_token: csrfToken })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast('New administrator added successfully!');
+                    formAddAdminDirect.reset();
+                    loadAdminsList();
+                } else {
+                    showToast(data.error || 'Failed to add administrator.', true);
+                }
+            } catch (e) {
+                showToast('Network error while adding administrator.', true);
+            }
+        });
     }
 
     async function loadAdminsList() {
@@ -906,18 +938,34 @@ document.addEventListener('DOMContentLoaded', () => {
         adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888;">Loading active administrators...</p>';
 
         try {
-            const res = await fetch('api/auth.php?action=list_admins', { cache: 'no-cache' });
-            const data = await res.json();
+            const res = await fetch('api/auth.php?action=list_admins', { 
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
 
-            if (res.ok && data.admins) {
-                if (data.admins.length === 0) {
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                adminsListContainer.innerHTML = `<p style="font-size: 13px; color: #C62828;">${escapeHtml(errData.error || 'Failed to load administrators (HTTP ' + res.status + ')')}</p>`;
+                return;
+            }
+
+            const data = await res.json();
+            if (data && Array.isArray(data.admins)) {
+                const count = data.admins.length;
+                if (navAdminsCount) navAdminsCount.textContent = count;
+                if (overviewAdminBadgeCount) overviewAdminBadgeCount.textContent = count;
+                if (modalAdminsCount) modalAdminsCount.textContent = count;
+
+                if (count === 0) {
                     adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888;">No administrators found.</p>';
                     return;
                 }
 
                 let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
                 data.admins.forEach(admin => {
-                    const isSelf = admin.email === adminEmailDisplay.textContent.trim();
+                    const currentEmail = (adminEmailDisplay ? adminEmailDisplay.textContent.trim() : '');
+                    const isSelf = admin.email.toLowerCase() === currentEmail.toLowerCase();
                     const joined = admin.created_at ? new Date(admin.created_at).toLocaleDateString() : '';
                     html += `
                         <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 8px;">
@@ -937,7 +985,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #C62828;">Failed to load administrators.</p>';
             }
         } catch (e) {
-            adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #C62828;">Network error loading admins.</p>';
+            console.error('Admins load error:', e);
+            adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #C62828;">Connection error loading administrators. Please retry.</p>';
         }
     }
 
