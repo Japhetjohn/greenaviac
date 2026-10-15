@@ -869,180 +869,295 @@
    Newsletter Subscription Section
    ======================================================== */
 .newsletter-subscribe-section {
-    padding: 0 0 60px;
+    padding: 20px 0 80px;
 }
 
-/* Two Adjacent Rectangles Split Card */
-.subscribe-split-card {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    background: #ffffff;
-    border: 1px solid #E2E8E2;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(13, 61, 47, 0.06);
-    min-height: 320px;
-}
-
-/* Left Rectangle: Media Showcase */
-.subscribe-media-pane {
+/* Full-width Banner Card with Geometric Envelope Styling */
+.newsletter-banner-card {
     position: relative;
-    width: 100%;
-    min-height: 260px;
-    background: #0D3D2F;
+    overflow: hidden;
+    background: linear-gradient(145deg, #07261d 0%, #0D3D2F 50%, #124b3b 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(13, 61, 47, 0.22), 0 4px 16px rgba(0, 0, 0, 0.08);
+    padding: 76px 40px 68px;
+    text-align: center;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.subscribe-media-pane img {
+/* Subtle Geometric Pattern / Envelope Fold in Background */
+.banner-geometric-bg {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.banner-geometric-bg svg {
+    width: 100%;
+    height: 100%;
     display: block;
 }
 
-/* Right Rectangle: Form Pane */
-.subscribe-form-pane {
-    padding: 40px 36px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: #ffffff;
-    text-align: left;
+/* Foreground Content */
+.newsletter-banner-content {
+    position: relative;
+    z-index: 2;
+    max-width: 760px;
+    margin: 0 auto;
 }
 
-.subscribe-heading {
-    font-size: 1.65rem;
+.newsletter-banner-title {
+    font-size: 2.5rem;
     font-weight: 700;
-    color: #0D3D2F;
-    margin-bottom: 8px;
-    line-height: 1.3;
+    color: #ffffff;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    font-family: inherit;
 }
 
-.subscribe-lead {
-    font-size: 0.95rem;
-    color: #4A5568;
-    line-height: 1.55;
-    margin-bottom: 20px;
+.newsletter-banner-subtitle {
+    font-size: 1.1rem;
+    color: rgba(232, 245, 233, 0.92);
+    line-height: 1.65;
+    max-width: 650px;
+    margin: 0 auto 36px;
 }
 
-.subscribe-form-inner {
+/* Form Layout */
+.newsletter-banner-form {
     width: 100%;
 }
 
-.subscribe-input-row {
+.banner-input-group {
     display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 12px;
+    align-items: stretch;
+    max-width: 640px;
+    margin: 0 auto 16px;
 }
 
-.subscribe-text-input {
+.banner-email-input {
     flex: 1;
-    padding: 12px 16px;
-    font-size: 0.95rem;
-    border: 1.5px solid #CBD5E0;
-    border-radius: 8px;
-    background: #F8FAF9;
-    color: #1A202C;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.subscribe-text-input:focus {
-    border-color: #2E7D32;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
-}
-
-.btn-subscribe-action {
-    background: #2E7D32;
+    min-width: 0;
+    padding: 15px 20px;
+    font-size: 1rem;
     color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(255, 255, 255, 0.28);
+    border-radius: 8px;
+    outline: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+}
+
+.banner-email-input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+    opacity: 1;
+}
+
+.banner-email-input:focus {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(184, 245, 66, 0.35);
+}
+
+.banner-btn-submit {
+    background: #4CAF50;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
     border: none;
     border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 0.95rem;
-    font-weight: 600;
+    padding: 15px 30px;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color 0.2s ease, transform 0.1s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 120px;
+    gap: 10px;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    font-family: inherit;
+    min-width: 150px;
 }
 
-.btn-subscribe-action:hover {
-    background: #1B5E20;
+.banner-btn-submit:hover {
+    background: #43A047;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
 
-.btn-subscribe-action:disabled {
-    opacity: 0.7;
+.banner-btn-submit:active {
+    transform: translateY(0);
+}
+
+.banner-btn-submit:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px #4CAF50;
+}
+
+.banner-btn-submit:disabled {
+    opacity: 0.75;
     cursor: not-allowed;
+    transform: none;
 }
 
-.btn-spinner {
+.btn-arrow-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.banner-btn-submit:hover .btn-arrow-icon {
+    transform: translateX(3px);
+}
+
+/* Loading Spinner */
+.banner-btn-submit.is-loading .btn-text,
+.banner-btn-submit.is-loading .btn-arrow-icon {
     display: none;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.banner-btn-submit .btn-spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
     border-top-color: #ffffff;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-left: 8px;
+    animation: bannerSpin 0.7s linear infinite;
 }
 
-.btn-subscribe-action.is-loading .btn-spinner {
+.banner-btn-submit.is-loading .btn-spinner {
     display: inline-block;
 }
 
-.subscribe-feedback {
-    display: none;
-    padding: 10px 14px;
-    border-radius: 6px;
+@keyframes bannerSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Consent Row */
+.banner-consent-row {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.banner-consent-label {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.banner-consent-checkbox {
+    appearance: auto;
+    -webkit-appearance: auto;
+    accent-color: #4CAF50;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.banner-consent-checkbox:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.banner-consent-text {
     font-size: 0.88rem;
-    line-height: 1.4;
-    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+    font-weight: 400;
 }
 
-.subscribe-feedback.is-success {
+.banner-consent-label:hover .banner-consent-text {
+    color: #ffffff;
+}
+
+/* Feedback Messages */
+.banner-feedback {
+    display: none;
+    max-width: 640px;
+    margin: 18px auto 0;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.banner-feedback.is-success {
     display: block;
-    background: #E8F5E9;
-    color: #1B5E20;
-    border: 1px solid #C8E6C9;
+    background: rgba(76, 175, 80, 0.22);
+    border: 1px solid rgba(184, 245, 66, 0.45);
+    color: #ffffff;
 }
 
-.subscribe-feedback.is-error {
+.banner-feedback.is-error {
     display: block;
-    background: #FFEBEE;
-    color: #C62828;
-    border: 1px solid #FFCDD2;
+    background: rgba(239, 68, 68, 0.22);
+    border: 1px solid rgba(248, 113, 113, 0.5);
+    color: #ffffff;
 }
 
-.subscribe-footer-note {
-    font-size: 0.8rem;
-    color: #718096;
-    margin-top: 4px;
-}
-
+/* Responsive Breakpoints */
 @media (max-width: 820px) {
-    .subscribe-split-card {
-        grid-template-columns: 1fr;
-        max-width: 520px;
-        margin: 0 auto;
+    .newsletter-banner-card {
+        padding: 56px 30px 48px;
+        border-radius: 18px;
     }
-    .subscribe-media-pane {
-        height: 200px;
-        min-height: auto;
+    .newsletter-banner-title {
+        font-size: 2.05rem;
     }
-    .subscribe-form-pane {
-        padding: 24px 20px;
+    .newsletter-banner-subtitle {
+        font-size: 1.02rem;
+        margin-bottom: 28px;
     }
-    .subscribe-heading {
-        font-size: 1.35rem;
+}
+
+@media (max-width: 600px) {
+    .newsletter-subscribe-section {
+        padding: 10px 0 50px;
     }
-    .subscribe-input-row {
+    .newsletter-banner-card {
+        padding: 40px 20px 32px;
+        border-radius: 16px;
+    }
+    .newsletter-banner-title {
+        font-size: 1.65rem;
+        margin-bottom: 12px;
+    }
+    .newsletter-banner-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 24px;
+        line-height: 1.55;
+    }
+    .banner-input-group {
         flex-direction: column;
+        gap: 12px;
     }
-    .btn-subscribe-action {
+    .banner-email-input {
         width: 100%;
+        padding: 14px 16px;
+    }
+    .banner-btn-submit {
+        width: 100%;
+        padding: 14px 20px;
+    }
+    .banner-consent-row {
+        text-align: left;
+    }
+    .banner-consent-text {
+        font-size: 0.82rem;
     }
 }
 

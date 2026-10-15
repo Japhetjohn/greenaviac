@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!email || !emailRegex.test(email)) {
                 if (subscribeFeedback) {
-                    subscribeFeedback.className = 'subscribe-feedback is-error';
+                    subscribeFeedback.className = 'subscribe-feedback banner-feedback is-error';
                     subscribeFeedback.textContent = 'Please enter a valid email address.';
                 }
                 subscriberEmail.focus();
@@ -364,8 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Consent validation
             if (subscriberConsent && !subscriberConsent.checked) {
                 if (subscribeFeedback) {
-                    subscribeFeedback.className = 'subscribe-feedback is-error';
-                    subscribeFeedback.textContent = 'Please check the box to agree to receive newsletter updates.';
+                    subscribeFeedback.className = 'subscribe-feedback banner-feedback is-error';
+                    subscribeFeedback.textContent = 'Please agree to receive Green AVIC News & Insights by checking the box.';
                 }
                 subscriberConsent.focus();
                 return;
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSubscribe.disabled = true;
             btnSubscribe.classList.add('is-loading');
             if (subscribeFeedback) {
-                subscribeFeedback.className = 'subscribe-feedback';
+                subscribeFeedback.className = 'subscribe-feedback banner-feedback';
                 subscribeFeedback.textContent = '';
             }
 
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         email: email,
-                        consent: true,
+                        consent: subscriberConsent ? subscriberConsent.checked : true,
                         website_url: hpVal
                     })
                 });
@@ -397,19 +397,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok && result.success) {
                     if (subscribeFeedback) {
-                        subscribeFeedback.className = 'subscribe-feedback is-success';
+                        subscribeFeedback.className = 'subscribe-feedback banner-feedback is-success';
                         subscribeFeedback.textContent = result.message || 'Thank you for subscribing to Green AVIC News & Insights!';
                     }
                     subscriberEmail.value = '';
+                    if (subscriberConsent) {
+                        subscriberConsent.checked = false;
+                    }
                 } else {
                     if (subscribeFeedback) {
-                        subscribeFeedback.className = 'subscribe-feedback is-error';
+                        subscribeFeedback.className = 'subscribe-feedback banner-feedback is-error';
                         subscribeFeedback.textContent = result.error || 'Unable to complete subscription. Please try again.';
                     }
                 }
             } catch (err) {
                 if (subscribeFeedback) {
-                    subscribeFeedback.className = 'subscribe-feedback is-error';
+                    subscribeFeedback.className = 'subscribe-feedback banner-feedback is-error';
                     subscribeFeedback.textContent = 'Network error. Please check your connection and try again.';
                 }
             } finally {
