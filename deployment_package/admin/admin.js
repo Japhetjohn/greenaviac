@@ -288,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDraftData = data.draft || null;
 
             renderOverview();
+            loadSubscriberAudienceSummary();
         } catch (error) {
             console.error('Error loading publications:', error);
             showToast('Failed to load publication status. Please refresh.', true);
@@ -777,9 +778,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok && data.success) {
                 currentPublishedData = data.article;
                 currentDraftData = null;
-                showToast('Article published live successfully! newsletter.greenavic.org is updated.');
+
+                let successMsg = 'Article published live successfully! newsletter.greenavic.org is updated.';
+                if (data.email_delivery) {
+                    if (data.email_delivery.attempted) {
+                        successMsg += ` Broadcast sent: ${data.email_delivery.sent_count} delivered (${data.email_delivery.failed_count} failed) to ${data.email_delivery.total_subscribers} subscribers.`;
+                    } else if (data.email_delivery.reason) {
+                        successMsg += ` (Email Note: ${data.email_delivery.reason})`;
+                    }
+                }
+                showToast(successMsg);
                 closeEditor();
                 renderOverview();
+                if (typeof loadSubscriberAudienceSummary === 'function') {
+                    loadSubscriberAudienceSummary();
+                }
             } else {
                 showToast(data.error || 'Failed to publish article. Existing publication preserved.', true);
             }
@@ -948,10 +961,325 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ----------------------------------------------------
+    // Subscribers & Broadcasts Management
+    // ----------------------------------------------------
+    const btnManageSubscribers = document.getElementById('btnManageSubscribers');
+    const overviewAudienceBadge = document.getElementById('overviewAudienceBadge');
+    const overviewSubscribersCount = document.getElementById('overviewSubscribersCount');
+    const subscribersModal = document.getElementById('subscribersModal');
+    const btnCloseSubscribersModal = document.getElementById('btnCloseSubscribersModal');
+    const btnCloseSubscribersModalBottom = document.getElementById('btnCloseSubscribersModalBottom');
+
+    const statActiveSubscribers = document.getElementById('statActiveSubscribers');
+    const statUnsubscribed = document.getElementById('statUnsubscribed');
+    const statSmtpStatus = document.getElementById('statSmtpStatus');
+    const statSmtpDesc = document.getElementById('statSmtpDesc');
+
+    const campaignCard = document.getElementById('campaignCard');
+    const campaignStatusBadge = document.getElementById('campaignStatusBadge');
+    const campaignDetails = document.getElementById('campaignDetails');
+    const campaignRetryContainer = document.getElementById('campaignRetryContainer');
+    const btnRetryCampaign = document.getElementById('btnRetryCampaign');
+
+    const btnTestSmtp = document.getElementById('btnTestSmtp');
+    const subscribersTableBody = document.getElementById('subscribersTableBody');
+    const formAddSubscriberDirect = document.getElementById('formAddSubscriberDirect');
+    const newSubEmail = document.getElementById('newSubEmail');
+
+    async function loadSubscriberAudienceSummary() {
+        try {
+            const res = await fetch('api/subscribers.php', { cache: 'no-cache' });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.stats && overviewSubscribersCount) {
+                overviewSubscribersCount.textContent = data.stats.active || 0;
+            }
+        } catch (e) {
+            // Silently ignore summary fetch error
+        }
+    }
+
+    async function loadSubscribersData() {
+        if (!subscribersTableBody) return;
+        subscribersTableBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; text-align: center; color: #888;">Loading subscriber records...</td></tr>';
+
+        try {
+            const res = await fetch('api/subscribers.php', { cache: 'no-cache' });
+            if (!res.ok) {
+                subscribersTableBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; text-align: center; color: #C62828;">Failed to load subscribers.</td></tr>';
+                return;
+            }
+
+            const data = await res.json();
+            if (data.csrf_token) {
+                csrfToken = data.csrf_token;
+            }
+
+            // 1. Stats Cards
+            if (data.stats) {
+                if (statActiveSubscribers) statActiveSubscribers.textContent = data.stats.active || 0;
+                if (statUnsubscribed) statUnsubscribed.textContent = data.stats.unsubscribed || 0;
+                if (overviewSubscribersCount) overviewSubscribersCount.textContent = data.stats.active || 0;
+            }
+
+            // 2. SMTP Status
+            if (data.smtp) {
+                if (statSmtpStatus) {
+                    statSmtpStatus.innerHTML = data.smtp.configured 
+                        ? '<span style="color:#2E7D32;">● Connected</span>' 
+                        : '<span style="color:#D32F2F;">● Not Configured</span>';
+                }
+                if (statSmtpDesc) {
+                    statSmtpDesc.textContent = data.smtp.configured 
+                        ? `${data.smtp.user || data.smtp.from_email} via ${data.smtp.host}` 
+                        : 'Credentials missing in cms-core/.env';
+                }
+            }
+
+            // 3. Latest Campaign Card
+            if (data.latest_campaign) {
+                const c = data.latest_campaign;
+                const isSent = c.status === 'sent';
+                const isSending = c.status === 'sending';
+                const badgeClass = isSent ? 'published' : (isSending ? 'draft' : 'empty');
+                
+                if (campaignStatusBadge) {
+                    campaignStatusBadge.className = 'status-badge ' + badgeClass;
+                    campaignStatusBadge.textContent = c.status.toUpperCase();
+                }
+
+                let detailsHtml = `
+                    <div style="margin-bottom: 6px;"><strong>Article:</strong> "${escapeHtml(c.subject)}"</div>
+                    <div><strong>Broadcast Performance:</strong> ${c.sent_count} sent &bull; ${c.failed_count} failed (out of ${c.total_subscribers} subscribers)</div>
+                    <div style="font-size: 11.5px; color: #888; margin-top: 4px;">Sent on ${formatDate(c.created_at)}</div>
+                `;
+
+                if (c.failed_count > 0) {
+                    if (campaignRetryContainer && btnRetryCampaign) {
+                        campaignRetryContainer.style.display = 'block';
+                        btnRetryCampaign.dataset.campaignId = c.id;
+                        btnRetryCampaign.textContent = `Retry ${c.failed_count} Failed Deliveries`;
+                    }
+                    if (data.failed_deliveries && data.failed_deliveries.length > 0) {
+                        detailsHtml += `
+                            <div style="margin-top: 10px; padding: 10px; background: #FFF4F4; border-radius: 6px; font-size: 12px; color: #C62828;">
+                                <strong>Delivery Errors:</strong>
+                                <ul style="margin: 6px 0 0 16px; padding: 0;">
+                                    ${data.failed_deliveries.slice(0, 5).map(f => `<li>${escapeHtml(f.email)}: ${escapeHtml(f.error_message || 'Connection error')}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    }
+                } else if (campaignRetryContainer) {
+                    campaignRetryContainer.style.display = 'none';
+                }
+
+                if (campaignDetails) campaignDetails.innerHTML = detailsHtml;
+            } else {
+                if (campaignStatusBadge) {
+                    campaignStatusBadge.className = 'status-badge empty';
+                    campaignStatusBadge.textContent = 'NO BROADCASTS YET';
+                }
+                if (campaignDetails) {
+                    campaignDetails.innerHTML = '<p style="margin: 0; color: #777;">When you publish an article, it will automatically broadcast to all active subscribers.</p>';
+                }
+                if (campaignRetryContainer) campaignRetryContainer.style.display = 'none';
+            }
+
+            // 4. Subscribers Table
+            if (!data.subscribers || data.subscribers.length === 0) {
+                subscribersTableBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; text-align: center; color: #888;">No subscribers yet. Audience will appear here as users subscribe on newsletter.greenavic.org.</td></tr>';
+                return;
+            }
+
+            let rows = '';
+            data.subscribers.forEach(sub => {
+                const isActive = sub.status === 'active';
+                const statusBadge = isActive 
+                    ? '<span style="display:inline-block; font-size:11px; font-weight:700; background:#E8F5E9; color:#2E7D32; padding:2px 8px; border-radius:12px;">ACTIVE</span>'
+                    : '<span style="display:inline-block; font-size:11px; font-weight:700; background:#FFF3E0; color:#E65100; padding:2px 8px; border-radius:12px;">UNSUBSCRIBED</span>';
+                
+                const subDate = sub.subscribed_at ? new Date(sub.subscribed_at).toLocaleDateString() : '';
+
+                rows += `
+                    <tr style="border-bottom: 1px solid #EAEAEA;">
+                        <td style="padding: 10px 14px; font-weight: 600; color: #1B382B;">${escapeHtml(sub.email)}</td>
+                        <td style="padding: 10px 14px;">${statusBadge}</td>
+                        <td style="padding: 10px 14px; color: #666; font-size: 12px;">${subDate}</td>
+                        <td style="padding: 10px 14px; text-align: right;">
+                            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                ${isActive ? `
+                                    <button type="button" class="sub-action-btn suppress" onclick="changeSubscriberStatus(${sub.id}, 'suppress')">Suppress</button>
+                                ` : `
+                                    <button type="button" class="sub-action-btn activate" onclick="changeSubscriberStatus(${sub.id}, 'activate')">Reactivate</button>
+                                `}
+                                <button type="button" class="sub-action-btn delete" onclick="deleteSubscriber(${sub.id}, '${escapeHtml(sub.email)}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            subscribersTableBody.innerHTML = rows;
+
+        } catch (e) {
+            console.error('Subscribers load error:', e);
+            subscribersTableBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; text-align: center; color: #C62828;">Network error loading subscribers.</td></tr>';
+        }
+    }
+
+    if (btnManageSubscribers && subscribersModal) {
+        btnManageSubscribers.addEventListener('click', () => {
+            subscribersModal.style.display = 'flex';
+            loadSubscribersData();
+        });
+    }
+
+    if (overviewAudienceBadge && subscribersModal) {
+        overviewAudienceBadge.addEventListener('click', () => {
+            subscribersModal.style.display = 'flex';
+            loadSubscribersData();
+        });
+    }
+
+    const closeSubscribers = () => { if (subscribersModal) subscribersModal.style.display = 'none'; };
+    if (btnCloseSubscribersModal) btnCloseSubscribersModal.addEventListener('click', closeSubscribers);
+    if (btnCloseSubscribersModalBottom) btnCloseSubscribersModalBottom.addEventListener('click', closeSubscribers);
+
+    // Suppress or Reactivate
+    window.changeSubscriberStatus = async function(id, action) {
+        try {
+            const res = await fetch('api/subscribers.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ action: action, id: id, csrf_token: csrfToken })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message || 'Subscriber status updated.');
+                loadSubscribersData();
+            } else {
+                showToast(data.error || 'Failed to update subscriber.', true);
+            }
+        } catch (e) {
+            showToast('Network error while updating subscriber.', true);
+        }
+    };
+
+    // Delete Subscriber
+    window.deleteSubscriber = async function(id, email) {
+        if (!confirm(`Are you sure you want to permanently delete subscriber "${email}"?`)) return;
+        try {
+            const res = await fetch('api/subscribers.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ action: 'delete', id: id, csrf_token: csrfToken })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Subscriber "${email}" deleted.`);
+                loadSubscribersData();
+            } else {
+                showToast(data.error || 'Failed to delete subscriber.', true);
+            }
+        } catch (e) {
+            showToast('Network error while deleting subscriber.', true);
+        }
+    };
+
+    // Retry Campaign Deliveries
+    if (btnRetryCampaign) {
+        btnRetryCampaign.addEventListener('click', async () => {
+            const campId = btnRetryCampaign.dataset.campaignId;
+            if (!campId) return;
+
+            btnRetryCampaign.disabled = true;
+            btnRetryCampaign.textContent = 'Retrying Deliveries...';
+
+            try {
+                const res = await fetch('api/subscribers.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ action: 'retry_campaign', campaign_id: parseInt(campId, 10), csrf_token: csrfToken })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Retry completed successfully.');
+                    loadSubscribersData();
+                } else {
+                    showToast(data.error || 'Failed to retry deliveries.', true);
+                }
+            } catch (e) {
+                showToast('Network error during delivery retry.', true);
+            } finally {
+                btnRetryCampaign.disabled = false;
+            }
+        });
+    }
+
+    // Test SMTP
+    if (btnTestSmtp) {
+        btnTestSmtp.addEventListener('click', async () => {
+            const adminEmail = (adminEmailDisplay ? adminEmailDisplay.textContent.trim() : '');
+            const target = prompt('Enter the email address to receive the test email:', adminEmail);
+            if (!target) return;
+
+            btnTestSmtp.disabled = true;
+            btnTestSmtp.textContent = 'Sending Test...';
+
+            try {
+                const res = await fetch('api/subscribers.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ action: 'test_smtp', email: target, csrf_token: csrfToken })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Test email sent successfully!');
+                } else {
+                    showToast(data.error || 'SMTP test failed.', true);
+                }
+            } catch (e) {
+                showToast('Network error while testing SMTP.', true);
+            } finally {
+                btnTestSmtp.disabled = false;
+                btnTestSmtp.textContent = 'Test SMTP';
+            }
+        });
+    }
+
+    // Add Subscriber Manually
+    if (formAddSubscriberDirect && newSubEmail) {
+        formAddSubscriberDirect.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = newSubEmail.value.trim();
+            if (!email) return;
+
+            try {
+                const res = await fetch('api/subscribers.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ action: 'add', email: email, csrf_token: csrfToken })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Subscriber added successfully.');
+                    newSubEmail.value = '';
+                    loadSubscribersData();
+                } else {
+                    showToast(data.error || 'Failed to add subscriber.', true);
+                }
+            } catch (e) {
+                showToast('Network error adding subscriber.', true);
+            }
+        });
+    }
+
     window.addEventListener('click', (e) => {
         if (e.target === previewModal) previewModal.style.display = 'none';
         if (e.target === confirmModal) confirmModal.style.display = 'none';
         if (adminsModal && e.target === adminsModal) adminsModal.style.display = 'none';
+        if (subscribersModal && e.target === subscribersModal) subscribersModal.style.display = 'none';
     });
 
     verifyAuth();

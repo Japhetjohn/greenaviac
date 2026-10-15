@@ -38,3 +38,15 @@ define('NEWSLETTER_DIR', dirname(__DIR__) . '/newsletter');
 define('ADMIN_DIR',      dirname(__DIR__) . '/admin');
 define('UPLOADS_DIR',    NEWSLETTER_DIR . '/uploads');
 define('UPLOADS_URL',    NEWSLETTER_URL . '/uploads');
+
+// ----------------------------------------------------------
+// Hostinger SMTP Mailer Configuration
+// ----------------------------------------------------------
+define('SMTP_HOST',       'smtp.hostinger.com');          // Hostinger SMTP host
+define('SMTP_PORT',       465);                           // 465 (SSL) or 587 (TLS)
+define('SMTP_SECURE',     'ssl');                         // 'ssl' or 'tls'
+define('SMTP_USER',       'newsletter@greenavic.org');     // Your Hostinger email account
+define('SMTP_PASS',       'YOUR_EMAIL_ACCOUNT_PASSWORD'); // Your Hostinger email password
+define('SMTP_FROM_EMAIL', 'newsletter@greenavic.org');     // Sender email address
+define('SMTP_FROM_NAME',  'Green AVIC');                  // Sender display name
+

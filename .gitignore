@@ -2,9 +2,12 @@
 .env
 .env.*
 *.env
+!.env.example
+!*.example
 config.php
 cms-core/.env
 deployment_package/cms-core/.env
+
 
 # Temporary / editor files
 .DS_Store

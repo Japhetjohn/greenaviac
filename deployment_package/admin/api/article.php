@@ -178,27 +178,47 @@ if ($method === 'POST') {
             // Clear draft
             $pdo->exec("DELETE FROM drafts WHERE id = 1");
 
+            $articleId = (int)$pdo->lastInsertId();
             $pdo->commit();
 
+            $articleData = [
+                'id'           => $articleId,
+                'title'        => $clean_title,
+                'slug'         => $slug,
+                'excerpt'      => $clean_excerpt,
+                'body'         => $clean_body,
+                'category'     => $clean_category,
+                'author'       => $clean_author,
+                'cover_image'  => $cover_image,
+                'cover_alt'    => $clean_cover_alt,
+                'status'       => 'published',
+                'reading_time' => $reading_time,
+                'published_at' => $published_at,
+                'updated_at'   => $now
+            ];
+
+            // ------------------------------------------------------
+            // Automatic Email Dispatch to Active Subscribers
+            // ------------------------------------------------------
+            $emailDelivery = null;
+            try {
+                require_once dirname(__DIR__, 2) . '/cms-core/newsletter_service.php';
+                $emailDelivery = dispatch_newsletter_campaign($pdo, $articleId, $articleData);
+            } catch (Exception $emailEx) {
+                error_log("Newsletter auto-delivery error: " . $emailEx->getMessage());
+                $emailDelivery = [
+                    'attempted' => false,
+                    'error'     => 'Email delivery system encountered an error: ' . $emailEx->getMessage()
+                ];
+            }
+
             json_response([
-                'success' => true,
-                'message' => 'Article published successfully! Live newsletter is updated.',
-                'article' => [
-                    'id'           => $pdo->lastInsertId(),
-                    'title'        => $clean_title,
-                    'slug'         => $slug,
-                    'excerpt'      => $clean_excerpt,
-                    'body'         => $clean_body,
-                    'category'     => $clean_category,
-                    'author'       => $clean_author,
-                    'cover_image'  => $cover_image,
-                    'cover_alt'    => $clean_cover_alt,
-                    'status'       => 'published',
-                    'reading_time' => $reading_time,
-                    'published_at' => $published_at,
-                    'updated_at'   => $now
-                ]
+                'success'        => true,
+                'message'        => 'Article published successfully! Live newsletter is updated.',
+                'article'        => $articleData,
+                'email_delivery' => $emailDelivery
             ]);
+
         } catch (Exception $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();

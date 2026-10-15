@@ -74,4 +74,59 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
   UNIQUE KEY `uk_ip_address` (`ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ----------------------------------------------------------
+-- 5. Table: subscribers (Email Newsletter Audience)
+-- Single opt-in with secure 1-click unsubscribe token.
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `subscribers` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(191) NOT NULL,
+  `status` ENUM('active', 'unsubscribed') NOT NULL DEFAULT 'active',
+  `token` VARCHAR(64) NOT NULL,
+  `ip_address` VARCHAR(45) DEFAULT NULL,
+  `subscribed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `unsubscribed_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_subscribers_email` (`email`),
+  KEY `idx_subscribers_status` (`status`),
+  KEY `idx_subscribers_token` (`token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------
+-- 6. Table: newsletter_campaigns (Email Dispatches per Article)
+-- Tracks automatic email broadcasts to subscribers.
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `newsletter_campaigns` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `article_id` INT UNSIGNED NOT NULL,
+  `subject` VARCHAR(255) NOT NULL,
+  `status` ENUM('pending', 'sending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
+  `total_subscribers` INT UNSIGNED NOT NULL DEFAULT 0,
+  `sent_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `completed_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_campaigns_article` (`article_id`),
+  KEY `idx_campaigns_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------
+-- 7. Table: newsletter_deliveries (Per-Subscriber Delivery Logs)
+-- Ensures duplicate-delivery prevention via unique constraint.
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `campaign_id` INT UNSIGNED NOT NULL,
+  `subscriber_id` INT UNSIGNED NOT NULL,
+  `email` VARCHAR(191) NOT NULL,
+  `status` ENUM('sent', 'failed') NOT NULL DEFAULT 'sent',
+  `error_message` VARCHAR(500) DEFAULT NULL,
+  `sent_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_subscriber` (`campaign_id`, `subscriber_id`),
+  KEY `idx_deliveries_campaign` (`campaign_id`),
+  KEY `idx_deliveries_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

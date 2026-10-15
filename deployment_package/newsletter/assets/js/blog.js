@@ -323,6 +323,79 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Newsletter Subscription Form Handler
+    const subscribeForm = document.getElementById('subscribeForm');
+    const subscriberEmail = document.getElementById('subscriberEmail');
+    const btnSubscribe = document.getElementById('btnSubscribe');
+    const subscribeFeedback = document.getElementById('subscribeFeedback');
+    const hpWebsite = document.getElementById('hp_website');
+
+    if (subscribeForm && subscriberEmail && btnSubscribe) {
+        subscribeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = (subscriberEmail.value || '').trim();
+            const hpVal = hpWebsite ? hpWebsite.value : '';
+
+            // Client-side quick email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRegex.test(email)) {
+                if (subscribeFeedback) {
+                    subscribeFeedback.className = 'subscribe-feedback is-error';
+                    subscribeFeedback.textContent = 'Please enter a valid email address.';
+                }
+                subscriberEmail.focus();
+                return;
+            }
+
+            // UI Loading state
+            btnSubscribe.disabled = true;
+            btnSubscribe.classList.add('is-loading');
+            if (subscribeFeedback) {
+                subscribeFeedback.className = 'subscribe-feedback';
+                subscribeFeedback.textContent = '';
+            }
+
+            try {
+                const response = await fetch('api/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        website_url: hpVal
+                    })
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok && result.success) {
+                    if (subscribeFeedback) {
+                        subscribeFeedback.className = 'subscribe-feedback is-success';
+                        subscribeFeedback.textContent = result.message || 'Thank you for subscribing to Green AVIC News & Insights!';
+                    }
+                    subscriberEmail.value = '';
+                } else {
+                    if (subscribeFeedback) {
+                        subscribeFeedback.className = 'subscribe-feedback is-error';
+                        subscribeFeedback.textContent = result.error || 'Unable to complete subscription. Please try again.';
+                    }
+                }
+            } catch (err) {
+                if (subscribeFeedback) {
+                    subscribeFeedback.className = 'subscribe-feedback is-error';
+                    subscribeFeedback.textContent = 'Network error. Please check your connection and try again.';
+                }
+            } finally {
+                btnSubscribe.disabled = false;
+                btnSubscribe.classList.remove('is-loading');
+            }
+        });
+    }
+
     // Initial Load
     loadArticle();
 });
+

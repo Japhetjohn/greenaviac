@@ -41,6 +41,14 @@
                     <span>View Live Newsletter</span>
                 </a>
 
+                <button type="button" id="btnManageSubscribers" class="nav-link-btn" title="View Subscribers & Campaign Broadcasts">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <span>Subscribers &amp; Broadcasts</span>
+                </button>
+
                 <button type="button" id="btnManageAdmins" class="nav-link-btn" title="Manage Administrators and Invite Team">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -95,6 +103,9 @@
                         <span id="overviewStatusText">Checking Status...</span>
                     </span>
                     <span id="overviewLastUpdated" class="last-updated"></span>
+                    <span id="overviewAudienceBadge" class="status-badge" style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; cursor: pointer;" title="Click to view newsletter audience & broadcasts">
+                        👥 <strong id="overviewSubscribersCount">0</strong> Subscribers
+                    </span>
                 </div>
 
                 <div style="display: flex; gap: 10px;">
@@ -492,6 +503,96 @@
             </div>
             <footer class="modal-footer">
                 <button type="button" class="btn btn-outline" id="btnCloseAdminsModalBottom">Close</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Modal: Manage Subscribers & Campaigns -->
+    <div id="subscribersModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="subscribersModalTitle" style="display: none;">
+        <div class="modal-card" style="max-width: 780px;">
+            <header class="modal-header">
+                <h3 class="modal-title" id="subscribersModalTitle">Newsletter Subscribers &amp; Broadcasts</h3>
+                <button type="button" class="modal-close-btn" id="btnCloseSubscribersModal" aria-label="Close Modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal-body" style="padding: 24px;">
+                <!-- Summary Metrics Grid -->
+                <div class="subscriber-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
+                    <div class="stat-box" style="background: #F4FBF4; border: 1px solid #C8DEC8; border-radius: 10px; padding: 14px 18px;">
+                        <div style="font-size: 12px; font-weight: 600; color: #2E7D32; text-transform: uppercase;">Active Audience</div>
+                        <div id="statActiveSubscribers" style="font-size: 26px; font-weight: 700; color: #0D3D2F; margin-top: 4px;">0</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Eligible for broadcasts</div>
+                    </div>
+                    <div class="stat-box" style="background: #FFFBF4; border: 1px solid #FFE0B2; border-radius: 10px; padding: 14px 18px;">
+                        <div style="font-size: 12px; font-weight: 600; color: #E65100; text-transform: uppercase;">Unsubscribed</div>
+                        <div id="statUnsubscribed" style="font-size: 26px; font-weight: 700; color: #E65100; margin-top: 4px;">0</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">Suppressed contacts</div>
+                    </div>
+                    <div class="stat-box" style="background: #F8FAF9; border: 1px solid #E2E8E2; border-radius: 10px; padding: 14px 18px;">
+                        <div style="font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase;">SMTP Status</div>
+                        <div id="statSmtpStatus" style="font-size: 15px; font-weight: 700; color: #0D3D2F; margin-top: 8px;">Checking...</div>
+                        <div id="statSmtpDesc" style="font-size: 11px; color: #666; margin-top: 2px;">Hostinger Mail</div>
+                    </div>
+                </div>
+
+                <!-- Latest Campaign Broadcast Status Card -->
+                <div id="campaignCard" style="background: #ffffff; border: 1px solid #E2E8E2; border-radius: 10px; padding: 18px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="color: #0D3D2F; font-size: 15px; margin: 0;">Latest Email Broadcast</h4>
+                        <span id="campaignStatusBadge" class="status-badge" style="font-size: 11px;">Checking...</span>
+                    </div>
+                    <div id="campaignDetails" style="font-size: 13px; color: #555; line-height: 1.6;">
+                        <p>When you publish an article, it will automatically broadcast to all active subscribers.</p>
+                    </div>
+                    <div id="campaignRetryContainer" style="margin-top: 12px; display: none;">
+                        <button type="button" id="btnRetryCampaign" class="btn btn-outline btn-sm">
+                            Retry Failed Deliveries
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Manual Add & Test Controls -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <h4 style="color: #0D3D2F; font-size: 15px; margin: 0;">Subscriber Roster</h4>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="btnTestSmtp" class="btn btn-outline btn-sm" title="Send a test email to verify credentials">Test SMTP</button>
+                    </div>
+                </div>
+
+                <!-- Subscribers Table -->
+                <div style="border: 1px solid #E2E8E2; border-radius: 8px; overflow-x: auto; max-height: 280px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                        <thead style="background: #F8FAF8; position: sticky; top: 0; z-index: 1;">
+                            <tr style="border-bottom: 1px solid #E2E8E2;">
+                                <th style="padding: 10px 14px; color: #555;">Email Address</th>
+                                <th style="padding: 10px 14px; color: #555;">Status</th>
+                                <th style="padding: 10px 14px; color: #555;">Subscribed</th>
+                                <th style="padding: 10px 14px; color: #555; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subscribersTableBody">
+                            <tr>
+                                <td colspan="4" style="padding: 24px; text-align: center; color: #888;">Loading subscribers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Add Subscriber Directly Form -->
+                <details style="border-top: 1px solid #E2E8E2; padding-top: 14px; margin-top: 20px;">
+                    <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #2E7D32;">+ Manually Add Subscriber Address</summary>
+                    <form id="formAddSubscriberDirect" style="margin-top: 12px; display: flex; gap: 8px;">
+                        <input type="email" id="newSubEmail" required placeholder="subscriber@example.com" style="flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                        <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; white-space: nowrap;">Add to Audience</button>
+                    </form>
+                </details>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="btn btn-outline" id="btnCloseSubscribersModalBottom">Close</button>
             </footer>
         </div>
     </div>

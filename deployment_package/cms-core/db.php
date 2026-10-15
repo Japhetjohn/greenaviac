@@ -49,20 +49,70 @@ function get_db(): PDO {
  */
 function ensure_tables_exist(PDO $pdo): bool {
     try {
-        $check = $pdo->query("SHOW TABLES LIKE 'users'");
-        if ($check->rowCount() > 0) {
-            return true;
+        // 1. Check if base users table exists
+        $checkUsers = $pdo->query("SHOW TABLES LIKE 'users'");
+        if ($checkUsers->rowCount() === 0) {
+            $schemaFile = __DIR__ . '/../schema.sql';
+            if (file_exists($schemaFile)) {
+                $sql = file_get_contents($schemaFile);
+                $pdo->exec($sql);
+                return true;
+            }
         }
 
-        $schemaFile = __DIR__ . '/../schema.sql';
-        if (file_exists($schemaFile)) {
-            $sql = file_get_contents($schemaFile);
-            $pdo->exec($sql);
-            return true;
+        // 2. Check and migrate newsletter subscription tables if upgrading an existing installation
+        $checkSubscribers = $pdo->query("SHOW TABLES LIKE 'subscribers'");
+        if ($checkSubscribers->rowCount() === 0) {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `subscribers` (
+                  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `email` VARCHAR(191) NOT NULL,
+                  `status` ENUM('active', 'unsubscribed') NOT NULL DEFAULT 'active',
+                  `token` VARCHAR(64) NOT NULL,
+                  `ip_address` VARCHAR(45) DEFAULT NULL,
+                  `subscribed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  `unsubscribed_at` DATETIME DEFAULT NULL,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uk_subscribers_email` (`email`),
+                  KEY `idx_subscribers_status` (`status`),
+                  KEY `idx_subscribers_token` (`token`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                CREATE TABLE IF NOT EXISTS `newsletter_campaigns` (
+                  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `article_id` INT UNSIGNED NOT NULL,
+                  `subject` VARCHAR(255) NOT NULL,
+                  `status` ENUM('pending', 'sending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
+                  `total_subscribers` INT UNSIGNED NOT NULL DEFAULT 0,
+                  `sent_count` INT UNSIGNED NOT NULL DEFAULT 0,
+                  `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
+                  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  `completed_at` DATETIME DEFAULT NULL,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_campaigns_article` (`article_id`),
+                  KEY `idx_campaigns_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
+                  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `campaign_id` INT UNSIGNED NOT NULL,
+                  `subscriber_id` INT UNSIGNED NOT NULL,
+                  `email` VARCHAR(191) NOT NULL,
+                  `status` ENUM('sent', 'failed') NOT NULL DEFAULT 'sent',
+                  `error_message` VARCHAR(500) DEFAULT NULL,
+                  `sent_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uk_campaign_subscriber` (`campaign_id`, `subscriber_id`),
+                  KEY `idx_deliveries_campaign` (`campaign_id`),
+                  KEY `idx_deliveries_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
         }
-        return false;
+
+        return true;
     } catch (Exception $e) {
         error_log("Schema initialization error: " . $e->getMessage());
         return false;
     }
 }
+
