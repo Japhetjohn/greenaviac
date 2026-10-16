@@ -145,13 +145,6 @@ function render_newsletter_email(array $article, string $unsubscribeUrl): string
                         By <strong style="color: #0D3D2F;"><?php echo $author; ?></strong>
                     </div>
 
-                    <!-- Cover Image (if present) -->
-                    <?php if (!empty($coverImage)): ?>
-                    <div style="margin-bottom: 28px;">
-                        <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo $coverAlt; ?>" width="528" style="width: 100%; max-width: 528px; height: auto; border-radius: 10px; display: block;">
-                    </div>
-                    <?php endif; ?>
-
                     <!-- Excerpt Callout -->
                     <?php if (!empty($excerpt)): ?>
                     <div style="background-color: #F8FAF8; border-left: 4px solid #4CAF50; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 28px; font-size: 16px; font-style: italic; color: #2E5A44; line-height: 1.6;">
