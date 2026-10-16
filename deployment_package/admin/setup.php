@@ -624,6 +624,28 @@ if ($isAuthorized && $pdo && $adminCount === 0 && $_SERVER['REQUEST_METHOD'] ===
             cursor: pointer;
             white-space: nowrap;
         }
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 12px;
+            }
+            .setup-card {
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+            .btn-row {
+                flex-direction: column;
+            }
+            .invite-input-row {
+                flex-direction: column;
+            }
+            .btn-copy {
+                width: 100%;
+                padding: 10px;
+            }
+            input[type="email"], input[type="password"], input[type="text"] {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 <body>

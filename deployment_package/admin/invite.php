@@ -199,6 +199,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 14px;
             font-weight: 600;
         }
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 12px;
+            }
+            .card {
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+            input[type="email"], input[type="password"] {
+                font-size: 16px !important;
+            }
+            .btn-submit {
+                font-size: 15px;
+                padding: 13px;
+                min-height: 46px;
+            }
+        }
     </style>
 </head>
 <body>

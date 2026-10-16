@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     function openModal(modal) {
         if (!modal) return;
+        closeMobileDrawer();
         modal.style.display = 'flex';
         modal.setAttribute('aria-hidden', 'false');
     }
@@ -263,6 +264,146 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModalClose(adminsModal, btnCloseAdminsModal, btnCloseAdminsModalBottom);
     setupModalClose(subscribersModal, btnCloseSubscribersModal, btnCloseSubscribersModalBottom);
     setupModalClose(healthLogsModal, btnCloseHealthLogsModal, btnCloseHealthLogsModalBottom);
+
+    // ----------------------------------------------------
+    // Mobile Drawer Navigation Handling
+    // ----------------------------------------------------
+    const btnMobileMenuToggle = document.getElementById('btnMobileMenuToggle');
+    const mobileNavBackdrop = document.getElementById('mobileNavBackdrop');
+    const mobileNavDrawer = document.getElementById('mobileNavDrawer');
+    const btnCloseMobileNav = document.getElementById('btnCloseMobileNav');
+    const adminEmailDisplayMobile = document.getElementById('adminEmailDisplayMobile');
+    const btnOpenPasswordModalMobile = document.getElementById('btnOpenPasswordModalMobile');
+    const btnManageSubscribersMobile = document.getElementById('btnManageSubscribersMobile');
+    const btnManageAdminsMobile = document.getElementById('btnManageAdminsMobile');
+    const btnHealthLogsMobile = document.getElementById('btnHealthLogsMobile');
+    const btnLogoutMobile = document.getElementById('btnLogoutMobile');
+    const navAdminsCountMobile = document.getElementById('navAdminsCountMobile');
+    const mobileAudienceCountBadge = document.getElementById('mobileAudienceCountBadge');
+
+    function openMobileDrawer() {
+        if (mobileNavDrawer) {
+            mobileNavDrawer.classList.add('open');
+            mobileNavDrawer.setAttribute('aria-hidden', 'false');
+        }
+        if (mobileNavBackdrop) {
+            mobileNavBackdrop.style.display = 'block';
+            setTimeout(() => {
+                if (mobileNavBackdrop) mobileNavBackdrop.classList.add('show');
+            }, 10);
+            mobileNavBackdrop.setAttribute('aria-hidden', 'false');
+        }
+        if (btnMobileMenuToggle) {
+            btnMobileMenuToggle.classList.add('active');
+            btnMobileMenuToggle.setAttribute('aria-expanded', 'true');
+        }
+        document.body.classList.add('drawer-open');
+    }
+
+    function closeMobileDrawer() {
+        if (mobileNavDrawer) {
+            mobileNavDrawer.classList.remove('open');
+            mobileNavDrawer.setAttribute('aria-hidden', 'true');
+        }
+        if (mobileNavBackdrop) {
+            mobileNavBackdrop.classList.remove('show');
+            setTimeout(() => {
+                if (mobileNavBackdrop && (!mobileNavDrawer || !mobileNavDrawer.classList.contains('open'))) {
+                    mobileNavBackdrop.style.display = 'none';
+                }
+            }, 250);
+            mobileNavBackdrop.setAttribute('aria-hidden', 'true');
+        }
+        if (btnMobileMenuToggle) {
+            btnMobileMenuToggle.classList.remove('active');
+            btnMobileMenuToggle.setAttribute('aria-expanded', 'false');
+        }
+        document.body.classList.remove('drawer-open');
+    }
+
+    if (btnMobileMenuToggle) {
+        btnMobileMenuToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (mobileNavDrawer && mobileNavDrawer.classList.contains('open')) {
+                closeMobileDrawer();
+            } else {
+                openMobileDrawer();
+            }
+        });
+    }
+
+    if (btnCloseMobileNav) {
+        btnCloseMobileNav.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileDrawer();
+        });
+    }
+
+    if (mobileNavBackdrop) {
+        mobileNavBackdrop.addEventListener('click', () => {
+            closeMobileDrawer();
+        });
+    }
+
+    // Close mobile nav drawer with Escape key
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mobileNavDrawer && mobileNavDrawer.classList.contains('open')) {
+            closeMobileDrawer();
+        }
+    });
+
+    // Auto-close drawer if screen resized beyond mobile breakpoint
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 900 && mobileNavDrawer && mobileNavDrawer.classList.contains('open')) {
+            closeMobileDrawer();
+        }
+    });
+
+    if (btnManageSubscribersMobile) {
+        btnManageSubscribersMobile.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileDrawer();
+            openModal(subscribersModal);
+            loadSubscribersData();
+        });
+    }
+
+    if (btnManageAdminsMobile) {
+        btnManageAdminsMobile.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileDrawer();
+            openModal(adminsModal);
+            loadAdminsList();
+        });
+    }
+
+    if (btnHealthLogsMobile) {
+        btnHealthLogsMobile.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileDrawer();
+            openModal(healthLogsModal);
+            loadSystemHealth();
+            loadSystemLogs();
+        });
+    }
+
+    if (btnOpenPasswordModalMobile) {
+        btnOpenPasswordModalMobile.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileDrawer();
+            showPasswordChangeModal(false);
+        });
+    }
+
+    if (btnLogoutMobile) {
+        btnLogoutMobile.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileDrawer();
+            if (btnLogout) {
+                btnLogout.click();
+            }
+        });
+    }
 
     // ----------------------------------------------------
     // Utilities
@@ -311,7 +452,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (data.email) {
-                adminEmailDisplay.textContent = data.email;
+                if (adminEmailDisplay) adminEmailDisplay.textContent = data.email;
+                if (adminEmailDisplayMobile) adminEmailDisplayMobile.textContent = data.email;
             }
 
             if (data.csrf_token) {
@@ -321,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Check if mandatory password change is required
             if (data.must_change_password) {
-                showPasswordChangeModal();
+                showPasswordChangeModal(true);
                 return;
             }
 
@@ -333,10 +475,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showPasswordChangeModal() {
-        if (passwordChangeModal) {
-            passwordChangeModal.style.display = 'flex';
+    const btnClosePasswordModal = document.getElementById('btnClosePasswordModal');
+    if (btnClosePasswordModal) {
+        btnClosePasswordModal.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeModal(passwordChangeModal);
+        });
+    }
+
+    function showPasswordChangeModal(isMandatory = false) {
+        if (!passwordChangeModal) return;
+        closeMobileDrawer();
+        const pwdTitle = document.getElementById('pwdChangeTitle');
+        if (pwdTitle) {
+            pwdTitle.textContent = isMandatory ? 'Password Change Required' : 'Change Account Password';
         }
+        if (btnClosePasswordModal) {
+            btnClosePasswordModal.style.display = isMandatory ? 'none' : 'flex';
+        }
+        passwordChangeModal.style.display = 'flex';
+        passwordChangeModal.setAttribute('aria-hidden', 'false');
     }
 
     if (pwdChangeForm) {
@@ -992,6 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const editorCount = data.editor_count || 0;
 
         if (navAdminsCount) navAdminsCount.textContent = total;
+        if (navAdminsCountMobile) navAdminsCountMobile.textContent = total;
         if (modalAdminsCount) modalAdminsCount.textContent = total;
         if (overviewAdminBadgeCount) {
             if (modCount > 0 || editorCount > 0) {
@@ -1255,8 +1414,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('api/subscribers.php', { cache: 'no-cache' });
             if (!res.ok) return;
             const data = await res.json();
-            if (data.stats && overviewSubscribersCount) {
-                overviewSubscribersCount.textContent = data.stats.active || 0;
+            if (data.stats) {
+                if (overviewSubscribersCount) {
+                    overviewSubscribersCount.textContent = data.stats.active || 0;
+                }
+                if (mobileAudienceCountBadge) {
+                    mobileAudienceCountBadge.textContent = `${data.stats.active || 0} Active`;
+                }
             }
         } catch (e) {
             // Silently ignore summary fetch error
@@ -1285,6 +1449,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (statPendingSubscribers) statPendingSubscribers.textContent = data.stats.total || data.stats.active || 0;
                 if (statUnsubscribed) statUnsubscribed.textContent = data.stats.unsubscribed || 0;
                 if (overviewSubscribersCount) overviewSubscribersCount.textContent = data.stats.active || 0;
+                if (mobileAudienceCountBadge) mobileAudienceCountBadge.textContent = `${data.stats.active || 0} Active`;
             }
 
             // 2. Rolling 24-Hour Quota
