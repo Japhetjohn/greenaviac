@@ -14,7 +14,21 @@ require_once dirname(__DIR__, 2) . '/cms-core/common.php';
 $pdo = get_db();
 ensure_tables_exist($pdo);
 
-// Require authenticated administrator
+// Handle client-side error and diagnostic logging via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+    $action = $input['action'] ?? '';
+    if ($action === 'client_log') {
+        $level = in_array(strtolower($input['level'] ?? ''), ['error', 'warning', 'info'], true) ? strtolower($input['level']) : 'error';
+        $message = substr(trim($input['message'] ?? 'Client Script Error'), 0, 500);
+        $context = is_array($input['context'] ?? null) ? $input['context'] : ['detail' => substr(strval($input['context'] ?? ''), 0, 1000)];
+        AppLogger::log($level, 'client', $message, $context);
+        json_response(['success' => true]);
+    }
+    json_response(['error' => 'Invalid action.'], 400);
+}
+
+// Require authenticated administrator for inspecting or downloading logs
 $user = require_auth($pdo, true);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {

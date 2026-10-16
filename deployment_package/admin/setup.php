@@ -54,9 +54,9 @@ if ($tokenProvided && hash_equals($configuredToken, (string)$tokenProvided)) {
 
 $isAuthorized = $isAdminLoggedIn || $isTokenAuthorized;
 
-// Handle manual re-run request by authenticated admin
+// Handle manual re-run / repair request by authenticated admin or token
 $allowRerun = false;
-if (isset($_GET['action']) && $_GET['action'] === 'rerun' && $isAuthorized) {
+if ($isAuthorized && (isset($_GET['action']) && $_GET['action'] === 'rerun' || $_SERVER['REQUEST_METHOD'] === 'POST')) {
     $allowRerun = true;
 }
 
@@ -72,13 +72,16 @@ $clientInviteUrl = null;
 
 if ($isAuthorized && $pdo && (!$isLocked || $allowRerun)) {
     try {
-        // Step 1: Users table (Administrator accounts)
+        // Step 1: Users table (Administrator and Team accounts)
         $usersExist = $pdo->query("SHOW TABLES LIKE 'users'")->rowCount() > 0;
         if (!$usersExist) {
             $pdo->exec("
                 CREATE TABLE IF NOT EXISTS `users` (
                   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
                   `email` VARCHAR(191) NOT NULL,
+                  `name` VARCHAR(150) NOT NULL DEFAULT 'Administrator',
+                  `role` VARCHAR(50) NOT NULL DEFAULT 'admin',
+                  `status` ENUM('active', 'pending') NOT NULL DEFAULT 'active',
                   `password_hash` VARCHAR(255) NOT NULL,
                   `must_change_password` TINYINT(1) NOT NULL DEFAULT 1,
                   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -89,11 +92,34 @@ if ($isAuthorized && $pdo && (!$isLocked || $allowRerun)) {
             ");
             $migrationSteps[] = ['type' => 'success', 'msg' => 'Created administrator users table.'];
         } else {
+            // Safely verify and migrate missing columns on existing users table
+            try {
+                $userCols = $pdo->query("SHOW COLUMNS FROM `users`")->fetchAll(PDO::FETCH_COLUMN, 0);
+                if (!in_array('name', $userCols, true)) {
+                    $pdo->exec("ALTER TABLE `users` ADD COLUMN `name` VARCHAR(150) NOT NULL DEFAULT 'Administrator' AFTER `email`");
+                    $migrationSteps[] = ['type' => 'success', 'msg' => 'Added missing name column to users table.'];
+                }
+                if (!in_array('role', $userCols, true)) {
+                    $pdo->exec("ALTER TABLE `users` ADD COLUMN `role` VARCHAR(50) NOT NULL DEFAULT 'admin' AFTER `name`");
+                    $migrationSteps[] = ['type' => 'success', 'msg' => 'Added missing role column to users table.'];
+                }
+                if (!in_array('status', $userCols, true)) {
+                    $pdo->exec("ALTER TABLE `users` ADD COLUMN `status` ENUM('active', 'pending') NOT NULL DEFAULT 'active' AFTER `role`");
+                    $migrationSteps[] = ['type' => 'success', 'msg' => 'Added missing status column to users table.'];
+                }
+                if (!in_array('created_at', $userCols, true)) {
+                    $pdo->exec("ALTER TABLE `users` ADD COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`");
+                }
+                if (!in_array('updated_at', $userCols, true)) {
+                    $pdo->exec("ALTER TABLE `users` ADD COLUMN `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
+                }
+            } catch (Exception $colEx) {}
+
             $adminCount = (int)$pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
             $migrationSteps[] = ['type' => 'info', 'msg' => "Preserved {$adminCount} existing administrator account(s). Logins and passwords remain untouched."];
         }
 
-        // Step 2: Articles table (Current Live Publication)
+        // Step 2: Articles table (Current Live Publication) & Image URL Repair
         $articlesExist = $pdo->query("SHOW TABLES LIKE 'articles'")->rowCount() > 0;
         if (!$articlesExist) {
             $pdo->exec("
@@ -121,7 +147,23 @@ if ($isAuthorized && $pdo && (!$isLocked || $allowRerun)) {
             $migrationSteps[] = ['type' => 'info', 'msg' => "Verified live articles table ({$artCount} article(s) present)."];
         }
 
-        // Step 3: Drafts table (Unpublished Working Draft)
+        // Automatic Repair: Normalize all article cover images
+        $repairedArticles = 0;
+        $artStmt = $pdo->query("SELECT id, title, cover_image FROM `articles`");
+        while ($art = $artStmt->fetch()) {
+            $curImg = $art['cover_image'];
+            $normImg = normalize_image_url($curImg);
+            if ($curImg !== $normImg) {
+                $upStmt = $pdo->prepare("UPDATE `articles` SET `cover_image` = ? WHERE `id` = ?");
+                $upStmt->execute([$normImg, $art['id']]);
+                $repairedArticles++;
+            }
+        }
+        if ($repairedArticles > 0) {
+            $migrationSteps[] = ['type' => 'success', 'msg' => "Normalized and repaired {$repairedArticles} published article image URL(s)."];
+        }
+
+        // Step 3: Drafts table (Unpublished Working Draft) & Image URL Repair
         $draftsExist = $pdo->query("SHOW TABLES LIKE 'drafts'")->rowCount() > 0;
         if (!$draftsExist) {
             $pdo->exec("
@@ -142,6 +184,15 @@ if ($isAuthorized && $pdo && (!$isLocked || $allowRerun)) {
             ");
             $migrationSteps[] = ['type' => 'success', 'msg' => 'Created editorial working draft workbench.'];
         } else {
+            $draftStmt = $pdo->query("SELECT id, cover_image FROM `drafts` WHERE id = 1");
+            $draftRow = $draftStmt->fetch();
+            if ($draftRow && !empty($draftRow['cover_image'])) {
+                $normD = normalize_image_url($draftRow['cover_image']);
+                if ($draftRow['cover_image'] !== $normD) {
+                    $pdo->prepare("UPDATE `drafts` SET `cover_image` = ? WHERE id = 1")->execute([$normD]);
+                    $migrationSteps[] = ['type' => 'success', 'msg' => 'Normalized cover image URL for working draft.'];
+                }
+            }
             $migrationSteps[] = ['type' => 'info', 'msg' => 'Verified editorial draft workbench.'];
         }
 
@@ -631,8 +682,8 @@ if ($isAuthorized && $pdo && $adminCount === 0 && $_SERVER['REQUEST_METHOD'] ===
                 <div class="checklist-title">Verification &amp; Migration Summary</div>
                 <?php foreach ($migrationSteps as $step): ?>
                     <div class="checklist-item">
-                        <span class="<?= $step['type'] === 'success' ? 'checklist-icon-success' : 'checklist-icon-info' ?>">
-                            <?= $step['type'] === 'success' ? '✓' : 'ℹ' ?>
+                        <span class="<?= $step['type'] === 'success' ? 'checklist-icon-success' : 'checklist-icon-info' ?>" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: <?= $step['type'] === 'success' ? '#E8F5E9' : '#E3F2FD' ?>;">
+                            <?= $step['type'] === 'success' ? 'OK' : 'INFO' ?>
                         </span>
                         <span><?= htmlspecialchars($step['msg']) ?></span>
                     </div>
@@ -741,10 +792,27 @@ if ($isAuthorized && $pdo && $adminCount === 0 && $_SERVER['REQUEST_METHOD'] ===
             </div>
 
             <?php if ($isAdminLoggedIn): ?>
-                <div style="margin-top: 20px; font-size: 12px; color: var(--text-muted);">
-                    Logged in as admin? <a href="setup?action=rerun" style="color: var(--green); text-decoration: underline;">Re-verify schema integrity</a>
+                <div style="margin-top: 16px;">
+                    <a href="setup?action=rerun" class="btn-action btn-action-outline" style="display: block; width: 100%; border-style: dashed;">
+                        Re-verify Schema &amp; Normalize Images (Admin Session Active) &rarr;
+                    </a>
                 </div>
             <?php endif; ?>
+
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); text-align: left;">
+                <h3 style="font-size: 13.5px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px;">Unlock &amp; Run Database Maintenance</h3>
+                <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
+                    Enter your Setup Token from <code>cms-core/.env</code> to re-run idempotent schema verification, check all 7 tables, and repair article image URLs without altering administrator accounts or passwords.
+                </p>
+                <form method="POST" action="setup">
+                    <input type="hidden" name="action" value="rerun">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="setup_token_unlock">Installer Security Token</label>
+                        <input type="password" id="setup_token_unlock" name="setup_token" required placeholder="Enter SETUP_TOKEN from cms-core/.env" autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn-submit" style="padding: 11px; margin-top: 0;">Unlock &amp; Run Database Repair &rarr;</button>
+                </form>
+            </div>
         </div>
 
     <!-- Error State -->

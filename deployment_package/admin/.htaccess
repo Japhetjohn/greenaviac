@@ -49,7 +49,7 @@
 </IfModule>
 
 # Protect sensitive files and credentials
-<FilesMatch "(?i)\.(sql|lock|bak|config|env|env\..*)$">
+<FilesMatch "(^\.env|(?i)\.(sql|lock|bak|config|env|env\..*))$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -58,6 +58,9 @@
         Deny from all
     </IfModule>
 </FilesMatch>
+<Files ".env">
+    Require all denied
+</Files>
 
 # Security Headers
 <IfModule mod_headers.c>

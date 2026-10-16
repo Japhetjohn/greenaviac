@@ -38,13 +38,24 @@ if ($method === 'GET') {
             $stmt = $pdo->query("SELECT id, name, email, role, status, must_change_password, created_at FROM users ORDER BY id ASC");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $admins = [];
+            $adminCount = 0;
+            $modCount = 0;
+            $editorCount = 0;
             foreach ($rows as $row) {
+                $role = !empty($row['role']) ? strtolower(trim($row['role'])) : 'admin';
+                if ($role === 'moderator') {
+                    $modCount++;
+                } elseif ($role === 'editor') {
+                    $editorCount++;
+                } else {
+                    $adminCount++;
+                }
                 $status = !empty($row['must_change_password']) ? 'Pending Setup' : ucfirst($row['status'] ?? 'active');
                 $admins[] = [
                     'id'         => (int)$row['id'],
                     'name'       => !empty($row['name']) ? $row['name'] : 'Administrator',
                     'email'      => $row['email'],
-                    'role'       => !empty($row['role']) ? $row['role'] : 'admin',
+                    'role'       => $role,
                     'status'     => $status,
                     'is_current' => ((int)$row['id'] === (int)$user['id']),
                     'created_at' => $row['created_at'] ?? null
@@ -52,9 +63,12 @@ if ($method === 'GET') {
             }
             AppLogger::info('auth', 'Administrator roster retrieved', ['admin_id' => $user['id'], 'count' => count($admins)]);
             json_response([
-                'success' => true,
-                'count'   => count($admins),
-                'admins'  => $admins
+                'success'         => true,
+                'count'           => count($admins),
+                'admin_count'     => $adminCount,
+                'moderator_count' => $modCount,
+                'editor_count'    => $editorCount,
+                'admins'          => $admins
             ]);
         } catch (Exception $e) {
             AppLogger::error('auth', 'list_admins error: ' . $e->getMessage());
@@ -247,7 +261,7 @@ if ($method === 'POST') {
             $newName = ucwords(str_replace(['.', '_', '-'], ' ', $parts[0]));
         }
         $newRole = trim($input['role'] ?? 'admin');
-        if (!in_array($newRole, ['admin', 'editor'], true)) {
+        if (!in_array($newRole, ['admin', 'moderator', 'editor'], true)) {
             $newRole = 'admin';
         }
 

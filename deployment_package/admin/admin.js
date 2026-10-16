@@ -3,6 +3,56 @@
  * MariaDB Single-Publication CMS Client with Mandatory First-Login Password Change
  */
 
+// ----------------------------------------------------
+// Global Utilities & Client-Side Error Reporting
+// ----------------------------------------------------
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+window.addEventListener('error', (event) => {
+    try {
+        fetch('api/logs.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'client_log',
+                level: 'error',
+                message: event.message || 'Client JavaScript error',
+                context: {
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    stack: event.error ? event.error.stack : null
+                }
+            })
+        }).catch(() => {});
+    } catch (e) {}
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    try {
+        fetch('api/logs.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'client_log',
+                level: 'warning',
+                message: 'Unhandled Promise Rejection: ' + (event.reason ? (event.reason.message || String(event.reason)) : 'unknown'),
+                context: {
+                    stack: event.reason && event.reason.stack ? event.reason.stack : null
+                }
+            })
+        }).catch(() => {});
+    } catch (e) {}
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // State Variables
@@ -93,7 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnReplaceImage = document.getElementById('btnReplaceImage');
     const btnRemoveImage = document.getElementById('btnRemoveImage');
 
-    // Modals
+    // ----------------------------------------------------
+    // DOM Elements - Modals & Dialogs
+    // ----------------------------------------------------
     const previewModal = document.getElementById('previewModal');
     const previewModalBody = document.getElementById('previewModalBody');
     const btnClosePreviewModal = document.getElementById('btnClosePreviewModal');
@@ -103,6 +155,114 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelConfirm = document.getElementById('btnCancelConfirm');
     const btnCancelConfirmTop = document.getElementById('btnCancelConfirmTop');
     const btnProceedPublish = document.getElementById('btnProceedPublish');
+
+    // Team & Administrators Elements
+    const btnManageAdmins = document.getElementById('btnManageAdmins');
+    const navAdminsCount = document.getElementById('navAdminsCount');
+    const overviewAdminBadge = document.getElementById('overviewAdminBadge');
+    const overviewAdminBadgeCount = document.getElementById('overviewAdminBadgeCount');
+    const adminsModal = document.getElementById('adminsModal');
+    const modalAdminsCount = document.getElementById('modalAdminsCount');
+    const btnCloseAdminsModal = document.getElementById('btnCloseAdminsModal');
+    const btnCloseAdminsModalBottom = document.getElementById('btnCloseAdminsModalBottom');
+    const adminsListContainer = document.getElementById('adminsListContainer');
+    const btnGenerateInvite = document.getElementById('btnGenerateInvite');
+    const inviteLinkInput = document.getElementById('inviteLinkInput');
+    const btnCopyInviteLink = document.getElementById('btnCopyInviteLink');
+    const formAddAdminDirect = document.getElementById('formAddAdminDirect');
+    const btnRefreshAdmins = document.getElementById('btnRefreshAdmins');
+
+    // Subscribers & Broadcasts Elements
+    const btnManageSubscribers = document.getElementById('btnManageSubscribers');
+    const overviewAudienceBadge = document.getElementById('overviewAudienceBadge');
+    const overviewSubscribersCount = document.getElementById('overviewSubscribersCount');
+    const subscribersModal = document.getElementById('subscribersModal');
+    const btnCloseSubscribersModal = document.getElementById('btnCloseSubscribersModal');
+    const btnCloseSubscribersModalBottom = document.getElementById('btnCloseSubscribersModalBottom');
+    const statActiveSubscribers = document.getElementById('statActiveSubscribers');
+    const statPendingSubscribers = document.getElementById('statPendingSubscribers');
+    const statUnsubscribed = document.getElementById('statUnsubscribed');
+    const statQuotaUsed = document.getElementById('statQuotaUsed');
+    const statQuotaAvail = document.getElementById('statQuotaAvail');
+    const statSmtpStatus = document.getElementById('statSmtpStatus');
+    const statSmtpDesc = document.getElementById('statSmtpDesc');
+    const campaignCard = document.getElementById('campaignCard');
+    const campaignStatusBadge = document.getElementById('campaignStatusBadge');
+    const campaignDetails = document.getElementById('campaignDetails');
+    const btnProcessBatch = document.getElementById('btnProcessBatch');
+    const btnRetryCampaign = document.getElementById('btnRetryCampaign');
+    const cronStatusPill = document.getElementById('cronStatusPill');
+    const cronCommandText = document.getElementById('cronCommandText');
+    const btnTestSmtp = document.getElementById('btnTestSmtp');
+    const subscribersTableBody = document.getElementById('subscribersTableBody');
+    const formAddSubscriberDirect = document.getElementById('formAddSubscriberDirect');
+    const newSubEmail = document.getElementById('newSubEmail');
+
+    // System Health & Audit Logs Elements
+    const btnHealthLogs = document.getElementById('btnHealthLogs');
+    const healthLogsModal = document.getElementById('healthLogsModal');
+    const btnCloseHealthLogsModal = document.getElementById('btnCloseHealthLogsModal');
+    const btnCloseHealthLogsModalBottom = document.getElementById('btnCloseHealthLogsModalBottom');
+    const tabBtnHealth = document.getElementById('tabBtnHealth');
+    const tabBtnLogs = document.getElementById('tabBtnLogs');
+    const tabContentHealth = document.getElementById('tabContentHealth');
+    const tabContentLogs = document.getElementById('tabContentLogs');
+    const btnRefreshHealth = document.getElementById('btnRefreshHealth');
+    const btnRepairDatabase = document.getElementById('btnRepairDatabase');
+    const btnFilterLogs = document.getElementById('btnFilterLogs');
+    const logLevelFilter = document.getElementById('logLevelFilter');
+    const logSearchInput = document.getElementById('logSearchInput');
+    const logsTableBody = document.getElementById('logsTableBody');
+    const healthDbBadge = document.getElementById('healthDbBadge');
+    const healthDbName = document.getElementById('healthDbName');
+    const healthDbLatency = document.getElementById('healthDbLatency');
+    const healthDbSchema = document.getElementById('healthDbSchema');
+    const healthSmtpBadge = document.getElementById('healthSmtpBadge');
+    const healthSmtpConfigured = document.getElementById('healthSmtpConfigured');
+    const healthSmtpTested = document.getElementById('healthSmtpTested');
+    const healthSmtpVerified = document.getElementById('healthSmtpVerified');
+    const healthQueueBadge = document.getElementById('healthQueueBadge');
+    const healthActiveSubs = document.getElementById('healthActiveSubs');
+    const healthPendingDeliv = document.getElementById('healthPendingDeliv');
+    const healthFailedDeliv = document.getElementById('healthFailedDeliv');
+    const healthRuntimeBadge = document.getElementById('healthRuntimeBadge');
+    const healthMemory = document.getElementById('healthMemory');
+    const healthDisk = document.getElementById('healthDisk');
+    const healthServerTime = document.getElementById('healthServerTime');
+
+    // ----------------------------------------------------
+    // Modal Management Helpers
+    // ----------------------------------------------------
+    function openModal(modal) {
+        if (!modal) return;
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    function setupModalClose(modal, ...closeButtons) {
+        if (!modal) return;
+        closeButtons.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    closeModal(modal);
+                });
+            }
+        });
+    }
+
+    // Attach universal close handlers to all modals
+    setupModalClose(previewModal, btnClosePreviewModal, btnClosePreviewModalBottom);
+    setupModalClose(confirmModal, btnCancelConfirm, btnCancelConfirmTop);
+    setupModalClose(adminsModal, btnCloseAdminsModal, btnCloseAdminsModalBottom);
+    setupModalClose(subscribersModal, btnCloseSubscribersModal, btnCloseSubscribersModalBottom);
+    setupModalClose(healthLogsModal, btnCloseHealthLogsModal, btnCloseHealthLogsModalBottom);
 
     // ----------------------------------------------------
     // Utilities
@@ -325,6 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
             overviewReadTime.textContent = `${currentPublishedData.reading_time || 3} min read`;
 
             if (currentPublishedData.cover_image) {
+                const fallbackThumbnail = 'assets/images/brand/greenavic-placeholder.svg';
+                overviewThumbnail.onerror = function() {
+                    this.onerror = null;
+                    this.src = fallbackThumbnail;
+                };
                 overviewThumbnail.src = currentPublishedData.cover_image;
                 overviewThumbContainer.style.display = 'block';
             } else {
@@ -454,6 +619,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cover Image Upload & Drag-and-Drop
     // ----------------------------------------------------
     function setCoverImage(url, alt = '') {
+        const fallback = 'assets/images/brand/greenavic-placeholder.svg';
+        uploadPreviewImg.onerror = function() {
+            this.onerror = null;
+            this.src = fallback;
+        };
         postCoverImage.value = url;
         uploadPreviewImg.src = url;
         previewFileName.textContent = url.split('/').pop();
@@ -814,19 +984,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // Team & Administrators Modal Handling
     // ----------------------------------------------------
-    const btnManageAdmins = document.getElementById('btnManageAdmins');
-    const navAdminsCount = document.getElementById('navAdminsCount');
-    const overviewAdminBadge = document.getElementById('overviewAdminBadge');
-    const overviewAdminBadgeCount = document.getElementById('overviewAdminBadgeCount');
-    const adminsModal = document.getElementById('adminsModal');
-    const modalAdminsCount = document.getElementById('modalAdminsCount');
-    const btnCloseAdminsModal = document.getElementById('btnCloseAdminsModal');
-    const btnCloseAdminsModalBottom = document.getElementById('btnCloseAdminsModalBottom');
-    const adminsListContainer = document.getElementById('adminsListContainer');
-    const btnGenerateInvite = document.getElementById('btnGenerateInvite');
-    const inviteLinkInput = document.getElementById('inviteLinkInput');
-    const btnCopyInviteLink = document.getElementById('btnCopyInviteLink');
-    const formAddAdminDirect = document.getElementById('formAddAdminDirect');
+    function applyAdminCounts(data) {
+        if (!data) return;
+        const total = data.count || (Array.isArray(data.admins) ? data.admins.length : 0);
+        const adminCount = data.admin_count !== undefined ? data.admin_count : total;
+        const modCount = data.moderator_count || 0;
+        const editorCount = data.editor_count || 0;
+
+        if (navAdminsCount) navAdminsCount.textContent = total;
+        if (modalAdminsCount) modalAdminsCount.textContent = total;
+        if (overviewAdminBadgeCount) {
+            if (modCount > 0 || editorCount > 0) {
+                overviewAdminBadgeCount.textContent = `${total} (${adminCount} Admin${adminCount !== 1 ? 's' : ''}, ${modCount} Mod${modCount !== 1 ? 's' : ''}${editorCount > 0 ? `, ${editorCount} Editor${editorCount !== 1 ? 's' : ''}` : ''})`;
+            } else {
+                overviewAdminBadgeCount.textContent = `${adminCount} Admin${adminCount !== 1 ? 's' : ''}`;
+            }
+        }
+    }
 
     async function loadAdminCountSummary() {
         try {
@@ -837,29 +1011,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!res.ok) return;
             const data = await res.json();
-            if (data && Array.isArray(data.admins)) {
-                const count = data.admins.length;
-                if (navAdminsCount) navAdminsCount.textContent = count;
-                if (overviewAdminBadgeCount) overviewAdminBadgeCount.textContent = count;
-                if (modalAdminsCount) modalAdminsCount.textContent = count;
+            if (data && (Array.isArray(data.admins) || data.count !== undefined)) {
+                applyAdminCounts(data);
             }
         } catch (e) {
             // Silently ignore summary error
         }
     }
 
-    const btnRefreshAdmins = document.getElementById('btnRefreshAdmins');
-
-    if (btnManageAdmins && adminsModal) {
-        btnManageAdmins.addEventListener('click', () => {
-            adminsModal.style.display = 'flex';
+    if (btnManageAdmins) {
+        btnManageAdmins.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(adminsModal);
             loadAdminsList();
         });
     }
 
-    if (overviewAdminBadge && adminsModal) {
-        overviewAdminBadge.addEventListener('click', () => {
-            adminsModal.style.display = 'flex';
+    if (overviewAdminBadge) {
+        overviewAdminBadge.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(adminsModal);
             loadAdminsList();
         });
         overviewAdminBadge.addEventListener('keydown', (e) => {
@@ -870,22 +1041,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (overviewAudienceBadge && subscribersModal) {
-        overviewAudienceBadge.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                overviewAudienceBadge.click();
-            }
-        });
-    }
-
     if (btnRefreshAdmins) {
         btnRefreshAdmins.addEventListener('click', () => loadAdminsList());
     }
-
-    const closeAdmins = () => { if (adminsModal) adminsModal.style.display = 'none'; };
-    if (btnCloseAdminsModal) btnCloseAdminsModal.addEventListener('click', closeAdmins);
-    if (btnCloseAdminsModalBottom) btnCloseAdminsModalBottom.addEventListener('click', closeAdmins);
 
     // Generate client invite link
     if (btnGenerateInvite) {
@@ -981,11 +1139,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
             if (data && Array.isArray(data.admins)) {
-                const count = data.admins.length;
-                if (navAdminsCount) navAdminsCount.textContent = count;
-                if (overviewAdminBadgeCount) overviewAdminBadgeCount.textContent = count;
-                if (modalAdminsCount) modalAdminsCount.textContent = count;
+                applyAdminCounts(data);
 
+                const count = data.admins.length;
                 if (count === 0) {
                     adminsListContainer.innerHTML = '<p style="font-size: 13px; color: #888; padding: 16px; text-align: center;">No administrators found.</p>';
                     return;
@@ -1006,11 +1162,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 data.admins.forEach(admin => {
                     const isCurrent = admin.is_current;
-                    const joined = admin.created_at ? new Date(admin.created_at).toLocaleDateString() : 'Active';
+                    const joined = admin.created_at ? formatDate(admin.created_at) : 'Active';
                     const isPending = (admin.status === 'Pending Setup');
                     const statusBadgeStyle = isPending
                         ? 'background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082;'
                         : 'background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9;';
+
+                    // Role badge styling
+                    const r = (admin.role || 'admin').toLowerCase();
+                    let roleLabel = 'Administrator';
+                    let roleBadgeStyle = 'background: #EBF3FA; color: #1565C0; border: 1px solid #BBDEFB;';
+                    if (r === 'moderator') {
+                        roleLabel = 'Moderator';
+                        roleBadgeStyle = 'background: #FFF3E0; color: #E65100; border: 1px solid #FFE0B2;';
+                    } else if (r === 'editor') {
+                        roleLabel = 'Editor';
+                        roleBadgeStyle = 'background: #F3E5F5; color: #6A1B9A; border: 1px solid #E1BEE7;';
+                    }
                     
                     html += `
                         <tr style="border-bottom: 1px solid #F0F0F0;">
@@ -1019,8 +1187,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div style="font-size: 12px; color: #666;">${escapeHtml(admin.email)}</div>
                             </td>
                             <td style="padding: 12px 14px;">
-                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #444; background: #EEE; padding: 2px 6px; border-radius: 4px;">
-                                    ${escapeHtml(admin.role || 'admin')}
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; ${roleBadgeStyle}">
+                                    ${escapeHtml(roleLabel)}
                                 </span>
                             </td>
                             <td style="padding: 12px 14px;">
@@ -1029,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </span>
                             </td>
                             <td style="padding: 12px 14px; color: #666; font-size: 12px;">
-                                ${joined}
+                                ${escapeHtml(joined)}
                             </td>
                             <td style="padding: 12px 14px; text-align: right;">
                                 ${isCurrent ? `
@@ -1056,6 +1224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    window.loadAdminsList = loadAdminsList;
+
     window.deleteAdminUser = async function(userId, email) {
         if (!confirm(`Are you sure you want to remove administrator "${email}"? They will lose dashboard access.`)) return;
         try {
@@ -1079,34 +1249,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // Subscribers & Broadcasts Management
     // ----------------------------------------------------
-    const btnManageSubscribers = document.getElementById('btnManageSubscribers');
-    const overviewAudienceBadge = document.getElementById('overviewAudienceBadge');
-    const overviewSubscribersCount = document.getElementById('overviewSubscribersCount');
-    const subscribersModal = document.getElementById('subscribersModal');
-    const btnCloseSubscribersModal = document.getElementById('btnCloseSubscribersModal');
-    const btnCloseSubscribersModalBottom = document.getElementById('btnCloseSubscribersModalBottom');
-
-    const statActiveSubscribers = document.getElementById('statActiveSubscribers');
-    const statPendingSubscribers = document.getElementById('statPendingSubscribers');
-    const statUnsubscribed = document.getElementById('statUnsubscribed');
-    const statQuotaUsed = document.getElementById('statQuotaUsed');
-    const statQuotaAvail = document.getElementById('statQuotaAvail');
-    const statSmtpStatus = document.getElementById('statSmtpStatus');
-    const statSmtpDesc = document.getElementById('statSmtpDesc');
-
-    const campaignCard = document.getElementById('campaignCard');
-    const campaignStatusBadge = document.getElementById('campaignStatusBadge');
-    const campaignDetails = document.getElementById('campaignDetails');
-    const btnProcessBatch = document.getElementById('btnProcessBatch');
-    const btnRetryCampaign = document.getElementById('btnRetryCampaign');
-
-    const cronStatusPill = document.getElementById('cronStatusPill');
-    const cronCommandText = document.getElementById('cronCommandText');
-
-    const btnTestSmtp = document.getElementById('btnTestSmtp');
-    const subscribersTableBody = document.getElementById('subscribersTableBody');
-    const formAddSubscriberDirect = document.getElementById('formAddSubscriberDirect');
-    const newSubEmail = document.getElementById('newSubEmail');
 
     async function loadSubscriberAudienceSummary() {
         try {
@@ -1296,23 +1438,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (btnManageSubscribers && subscribersModal) {
-        btnManageSubscribers.addEventListener('click', () => {
-            subscribersModal.style.display = 'flex';
+    if (btnManageSubscribers) {
+        btnManageSubscribers.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(subscribersModal);
             loadSubscribersData();
         });
     }
 
-    if (overviewAudienceBadge && subscribersModal) {
-        overviewAudienceBadge.addEventListener('click', () => {
-            subscribersModal.style.display = 'flex';
+    if (overviewAudienceBadge) {
+        overviewAudienceBadge.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(subscribersModal);
             loadSubscribersData();
         });
+        overviewAudienceBadge.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                overviewAudienceBadge.click();
+            }
+        });
     }
-
-    const closeSubscribers = () => { if (subscribersModal) subscribersModal.style.display = 'none'; };
-    if (btnCloseSubscribersModal) btnCloseSubscribersModal.addEventListener('click', closeSubscribers);
-    if (btnCloseSubscribersModalBottom) btnCloseSubscribersModalBottom.addEventListener('click', closeSubscribers);
 
     // Suppress or Reactivate
     window.changeSubscriberStatus = async function(id, action) {
@@ -1474,49 +1620,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // System Health & Diagnostic Logs Modal Handling
     // ----------------------------------------------------
-    const btnHealthLogs = document.getElementById('btnHealthLogs');
-    const healthLogsModal = document.getElementById('healthLogsModal');
-    const btnCloseHealthLogsModal = document.getElementById('btnCloseHealthLogsModal');
-    const btnCloseHealthLogsModalBottom = document.getElementById('btnCloseHealthLogsModalBottom');
-    const tabBtnHealth = document.getElementById('tabBtnHealth');
-    const tabBtnLogs = document.getElementById('tabBtnLogs');
-    const tabContentHealth = document.getElementById('tabContentHealth');
-    const tabContentLogs = document.getElementById('tabContentLogs');
-    const btnRefreshHealth = document.getElementById('btnRefreshHealth');
-    const btnFilterLogs = document.getElementById('btnFilterLogs');
-    const logLevelFilter = document.getElementById('logLevelFilter');
-    const logSearchInput = document.getElementById('logSearchInput');
-    const logsTableBody = document.getElementById('logsTableBody');
-
-    // Health UI elements
-    const healthDbBadge = document.getElementById('healthDbBadge');
-    const healthDbName = document.getElementById('healthDbName');
-    const healthDbLatency = document.getElementById('healthDbLatency');
-    const healthDbSchema = document.getElementById('healthDbSchema');
-    const healthSmtpBadge = document.getElementById('healthSmtpBadge');
-    const healthSmtpConfigured = document.getElementById('healthSmtpConfigured');
-    const healthSmtpTested = document.getElementById('healthSmtpTested');
-    const healthSmtpVerified = document.getElementById('healthSmtpVerified');
-    const healthQueueBadge = document.getElementById('healthQueueBadge');
-    const healthActiveSubs = document.getElementById('healthActiveSubs');
-    const healthPendingDeliv = document.getElementById('healthPendingDeliv');
-    const healthFailedDeliv = document.getElementById('healthFailedDeliv');
-    const healthRuntimeBadge = document.getElementById('healthRuntimeBadge');
-    const healthMemory = document.getElementById('healthMemory');
-    const healthDisk = document.getElementById('healthDisk');
-    const healthServerTime = document.getElementById('healthServerTime');
-
     if (btnHealthLogs && healthLogsModal) {
         btnHealthLogs.addEventListener('click', () => {
-            healthLogsModal.style.display = 'flex';
+            openModal(healthLogsModal);
             loadSystemHealth();
             loadSystemLogs();
         });
     }
 
-    const closeHealthLogs = () => { if (healthLogsModal) healthLogsModal.style.display = 'none'; };
-    if (btnCloseHealthLogsModal) btnCloseHealthLogsModal.addEventListener('click', closeHealthLogs);
-    if (btnCloseHealthLogsModalBottom) btnCloseHealthLogsModalBottom.addEventListener('click', closeHealthLogs);
+    if (btnRepairDatabase) {
+        btnRepairDatabase.addEventListener('click', async () => {
+            const originalText = btnRepairDatabase.textContent;
+            btnRepairDatabase.disabled = true;
+            btnRepairDatabase.textContent = 'Verifying & Repairing...';
+            try {
+                const res = await fetch('api/health.php?action=repair', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    credentials: 'same-origin'
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Database schema and images verified successfully.', false);
+                    loadSystemHealth();
+                } else {
+                    showToast(data.error || 'Failed to repair database.', true);
+                }
+            } catch (err) {
+                console.error('Repair error:', err);
+                showToast('Network error running database repair.', true);
+            } finally {
+                btnRepairDatabase.disabled = false;
+                btnRepairDatabase.textContent = originalText;
+            }
+        });
+    }
 
     if (tabBtnHealth && tabBtnLogs && tabContentHealth && tabContentLogs) {
         tabBtnHealth.addEventListener('click', () => {
@@ -1703,11 +1845,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('click', (e) => {
-        if (e.target === previewModal) previewModal.style.display = 'none';
-        if (e.target === confirmModal) confirmModal.style.display = 'none';
-        if (adminsModal && e.target === adminsModal) adminsModal.style.display = 'none';
-        if (subscribersModal && e.target === subscribersModal) subscribersModal.style.display = 'none';
-        if (healthLogsModal && e.target === healthLogsModal) healthLogsModal.style.display = 'none';
+        if (e.target === previewModal) closeModal(previewModal);
+        if (e.target === confirmModal) closeModal(confirmModal);
+        if (adminsModal && e.target === adminsModal) closeModal(adminsModal);
+        if (subscribersModal && e.target === subscribersModal) closeModal(subscribersModal);
+        if (healthLogsModal && e.target === healthLogsModal) closeModal(healthLogsModal);
+        if (passwordChangeModal && e.target === passwordChangeModal) closeModal(passwordChangeModal);
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (previewModal && previewModal.style.display !== 'none') closeModal(previewModal);
+            if (confirmModal && confirmModal.style.display !== 'none') closeModal(confirmModal);
+            if (adminsModal && adminsModal.style.display !== 'none') closeModal(adminsModal);
+            if (subscribersModal && subscribersModal.style.display !== 'none') closeModal(subscribersModal);
+            if (healthLogsModal && healthLogsModal.style.display !== 'none') closeModal(healthLogsModal);
+            if (passwordChangeModal && passwordChangeModal.style.display !== 'none') closeModal(passwordChangeModal);
+        }
     });
 
     verifyAuth();

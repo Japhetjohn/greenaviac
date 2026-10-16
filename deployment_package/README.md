@@ -73,12 +73,23 @@ Instead of manually importing SQL scripts through phpMyAdmin, use the automated 
    *(Or log in first if an administrator account already exists).*
 3. The installer automatically:
    - Connects to your MariaDB database using `cms-core/.env`.
-   - Preserves all existing administrator accounts, passwords, roles, and permissions.
+   - Preserves all existing administrator accounts, passwords, roles (Administrator, Moderator, Editor), and permissions.
    - Preserves all published articles, working drafts, and media.
+   - Normalizes all article cover image paths to valid public URLs (`https://newsletter.greenavic.org/uploads/covers/...`).
    - Migrates the subscriber audience to **Direct Single Opt-In** and activates any legacy pending subscribers.
-   - Creates the `newsletter_campaigns`, `newsletter_deliveries`, and `system_settings` tables if missing.
-   - Automatically writes `cms-core/setup.lock` to permanently self-lock against unauthorized re-runs.
-4. You will see green checkmarks for all database components.
+   - Creates `articles`, `drafts`, `subscribers`, `newsletter_campaigns`, `newsletter_deliveries`, `system_logs`, and `system_settings` tables if missing.
+   - Idempotently verifies and adds missing columns (`name`, `role`, `status`) to the `users` table without dropping accounts.
+   - Provides a direct token unlock form on locked screens so you can safely rerun migrations at any time without SSH.
+4. You will see success badges (`[OK]`) for all database components.
+
+---
+
+### Step 3: Verify & Repair via Admin Dashboard (Optional)
+If you ever need to inspect health or re-verify database integrity after upload:
+1. Log in to `https://admin.greenavic.org/login`.
+2. Click **"System Health"** in the top navigation bar.
+3. Inspect live MariaDB connection latency, Hostinger SMTP gateway handshake, and recent audit logs.
+4. Click **"Verify & Repair Database"** to automatically check table schemas and re-normalize publication images.
 
 ---
 

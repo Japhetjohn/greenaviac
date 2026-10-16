@@ -16,11 +16,75 @@ ensure_tables_exist($pdo);
 // Require authenticated administrator
 $user = require_auth($pdo, true);
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    json_response(['error' => 'Method not allowed.'], 405);
+$method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
+$input = [];
+if ($method === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+    if (empty($action)) {
+        $action = $input['action'] ?? '';
+    }
+}
+if (empty($action)) {
+    $action = 'health';
 }
 
-$action = $_GET['action'] ?? 'health';
+// ----------------------------------------------------------
+// 0. Database Repair & Image Path Normalization
+// ----------------------------------------------------------
+if ($action === 'repair') {
+    try {
+        ensure_tables_exist($pdo);
+
+        // Normalize cover_image URLs in articles
+        $artStmt = $pdo->query("SELECT id, cover_image FROM articles");
+        $repairedArticles = 0;
+        while ($art = $artStmt->fetch()) {
+            $cur = $art['cover_image'];
+            $norm = normalize_image_url($cur);
+            if ($cur !== $norm) {
+                $up = $pdo->prepare("UPDATE articles SET cover_image = ? WHERE id = ?");
+                $up->execute([$norm, $art['id']]);
+                $repairedArticles++;
+            }
+        }
+
+        // Normalize cover_image in drafts
+        $draftStmt = $pdo->query("SELECT id, cover_image FROM drafts WHERE id = 1");
+        $draftRow = $draftStmt->fetch();
+        $repairedDrafts = 0;
+        if ($draftRow && !empty($draftRow['cover_image'])) {
+            $normD = normalize_image_url($draftRow['cover_image']);
+            if ($draftRow['cover_image'] !== $normD) {
+                $pdo->prepare("UPDATE drafts SET cover_image = ? WHERE id = 1")->execute([$normD]);
+                $repairedDrafts++;
+            }
+        }
+
+        AppLogger::info('health', 'Database verified and repaired via admin dashboard', [
+            'articles_repaired' => $repairedArticles,
+            'drafts_repaired'   => $repairedDrafts
+        ]);
+
+        json_response([
+            'success'           => true,
+            'message'           => "Database verified and repaired successfully. All 7 tables intact. {$repairedArticles} publication image URL(s) normalized.",
+            'articles_repaired' => $repairedArticles,
+            'drafts_repaired'   => $repairedDrafts,
+            'checked_at'        => date('Y-m-d H:i:s')
+        ]);
+    } catch (Exception $e) {
+        AppLogger::error('health', 'Database repair failed: ' . $e->getMessage());
+        json_response([
+            'success' => false,
+            'error'   => 'Database repair failed: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+if ($method !== 'GET') {
+    json_response(['error' => 'Method not allowed.'], 405);
+}
 
 // ----------------------------------------------------------
 // 1. Database Detailed Inspection

@@ -513,6 +513,7 @@
                                 <label style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Role</label>
                                 <select id="newAdminRole" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: #fff;">
                                     <option value="admin">Administrator (Full Access)</option>
+                                    <option value="moderator">Moderator (Review &amp; Management)</option>
                                     <option value="editor">Editor (Content Management)</option>
                                 </select>
                             </div>
@@ -594,7 +595,7 @@
                 <!-- Hostinger Background Automation & Cron Helper -->
                 <details style="background: #F8FAF9; border: 1px solid #E2E8E2; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
                     <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #0D3D2F; display: flex; justify-content: space-between; align-items: center;">
-                        <span>⚙️ Hostinger Background Automation (Cron Job)</span>
+                        <span>Hostinger Background Automation (Cron Job)</span>
                         <span id="cronStatusPill" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #EEE; color: #666;">Checking cron...</span>
                     </summary>
                     <div style="margin-top: 12px; font-size: 12px; color: #555; line-height: 1.6;">
@@ -724,8 +725,9 @@
                         </div>
                     </div>
 
-                    <div style="text-align: right;">
+                    <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
                         <button type="button" id="btnRefreshHealth" class="btn btn-outline" style="font-size: 12.5px; padding: 6px 14px;">Refresh Diagnostics</button>
+                        <button type="button" id="btnRepairDatabase" class="btn btn-primary" style="font-size: 12.5px; padding: 6px 14px;">Verify &amp; Repair Database</button>
                     </div>
                 </div>
 

@@ -14,9 +14,12 @@
 
     # Protect data directory and sensitive file extensions
     RewriteRule ^data/ - [F,L]
-    <FilesMatch "(?i)\.(sql|json|bak|tmp|lock|config|env|env\..*)$">
+    <FilesMatch "(^\.env|(?i)\.(sql|json|bak|tmp|lock|config|env|env\..*))$">
         Require all denied
     </FilesMatch>
+    <Files ".env">
+        Require all denied
+    </Files>
 
     # API Clean URLs
     RewriteCond %{REQUEST_FILENAME} !-d
